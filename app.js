@@ -1,4 +1,5 @@
 const RESERVE = {
+  const API_URL = "https://script.google.com/macros/s/AKfycbzh0NHaQvFuo2inECDoBwurOQif4IHQryj32YlJz_WoASpQNThYSZ-btPPFGKjHQBNMkw/exec";
   name: "RESERVE RENIALA",
   details: "R.C N A00263, Stat 01299512000000018, NIF: 2000642034",
   bank: "BFV - SG Tulear, 00710/05001-005825-60",
@@ -90,12 +91,81 @@ function loadState() {
   const saved = localStorage.getItem("renialaAppState");
   return saved ? JSON.parse(saved) : structuredClone(seed);
 }
-function saveState() { localStorage.setItem("renialaAppState", JSON.stringify(state)); }
-function uid() { return Math.random().toString(36).slice(2, 9); }
-function today(offset = 0) {
-  const d = new Date();
-  d.setDate(d.getDate() + offset);
-  return d.toISOString().slice(0, 10);
+
+function saveState() {
+  localStorage.setItem("renialaAppState", JSON.stringify(state));
+  saveRemoteState();
+}
+
+function publicState() {
+  return {
+    ...state,
+    user: null
+  };
+}
+
+async function syncFromCloud() {
+  if (!API_URL || API_URL.includes("COLLE_ICI")) return;
+
+  try {
+    const data = await fetchJsonp(API_URL);
+
+    if (data?.state) {
+      const currentUser = state.user;
+      state = {
+        ...structuredClone(seed),
+        ...data.state,
+        user: currentUser
+      };
+      localStorage.setItem("renialaAppState", JSON.stringify(state));
+    } else {
+      await saveRemoteState();
+    }
+  } catch (error) {
+    console.warn("Synchronisation Google Sheet impossible", error);
+  }
+}
+
+async function saveRemoteState() {
+  if (!API_URL || API_URL.includes("COLLE_ICI")) return;
+
+  try {
+    await fetch(API_URL, {
+      method: "POST",
+      mode: "no-cors",
+      headers: {
+        "Content-Type": "text/plain;charset=utf-8"
+      },
+      body: JSON.stringify({
+        action: "saveState",
+        state: publicState()
+      })
+    });
+  } catch (error) {
+    console.warn("Sauvegarde Google Sheet impossible", error);
+  }
+}
+
+function fetchJsonp(url) {
+  return new Promise((resolve, reject) => {
+    const callbackName = "renialaCallback_" + Date.now();
+    const script = document.createElement("script");
+
+    window[callbackName] = data => {
+      resolve(data);
+      script.remove();
+      delete window[callbackName];
+    };
+
+    script.onerror = () => {
+      reject(new Error("Erreur de chargement Apps Script"));
+      script.remove();
+      delete window[callbackName];
+    };
+
+    script.src = `${url}?callback=${callbackName}`;
+    document.body.appendChild(script);
+  });
 }
 function fmtMoney(value) { return `${Number(value || 0).toLocaleString("fr-FR")} Ar`; }
 function byId(id) { return document.getElementById(id); }
@@ -152,11 +222,12 @@ function logout() {
   byId("loginView").classList.remove("hidden");
 }
 
-function enterApp() {
+async function enterApp() {
   byId("loginView").classList.add("hidden");
   byId("appView").classList.remove("hidden");
   byId("roleBadge").textContent = state.user.role;
   buildNav();
+  await syncFromCloud();
   render();
 }
 
