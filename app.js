@@ -75,6 +75,7 @@ const seed = {
 let state = loadState();
 let currentView = "dashboard";
 let calendarYear = new Date().getFullYear();
+let calendarMonth = new Date().getMonth();
 document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("loginForm").addEventListener("submit", login);
   document.getElementById("logoutBtn").addEventListener("click", logout);
@@ -181,6 +182,7 @@ function countFor(id) {
   if (id === "billing") return state.orders.filter(o => paymentStatus(o) !== "payee").length;
   return "";
 }
+
 
 function render() {
   NAV.forEach(([id]) => byId(id).classList.toggle("hidden", id !== currentView));
@@ -364,25 +366,68 @@ function renderBilling() {
 }
 
 function renderCalendar() {
-  byId("calendar").innerHTML = `
-    <div class="toolbar">
-      <div class="filters">
-        <button class="small secondary" id="prevYearBtn">Annee precedente</button>
-        <span class="pill">Calendrier ${calendarYear}</span>
-        <button class="small secondary" id="nextYearBtn">Annee suivante</button>
-      </div>
-    </div>
-    <div class="year-calendar">
-      ${Array.from({ length: 12 }, (_, month) => monthCalendar(calendarYear, month)).join("")}
-    </div>`;
+  const monthName = new Date(calendarYear, calendarMonth, 1)
+    .toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
 
-  byId("prevYearBtn").addEventListener("click", () => {
-    calendarYear -= 1;
+  const daysInMonth = new Date(calendarYear, calendarMonth + 1, 0).getDate();
+  const days = Array.from({ length: daysInMonth }, (_, index) => {
+    return formatDateKey(new Date(calendarYear, calendarMonth, index + 1));
+  });
+
+  const orders = state.orders
+    .filter(o => o.status === "Reservee")
+    .filter(o => {
+      const d = new Date((o.serviceDate || "") + "T00:00:00");
+      return d.getFullYear() === calendarYear && d.getMonth() === calendarMonth;
+    });
+
+  const clientIds = [...new Set(orders.map(o => o.clientId))];
+
+  byId("calendar").innerHTML = `
+    <div class="planning-toolbar">
+      <button class="small secondary" id="prevMonthBtn">Mois precedent</button>
+      <strong>${monthName}</strong>
+      <button class="small secondary" id="nextMonthBtn">Mois suivant</button>
+
+      <input id="monthPicker" type="month" value="${calendarYear}-${String(calendarMonth + 1).padStart(2, "0")}">
+    </div>
+
+    <div class="planning-table">
+      <div class="planning-head planning-client">Client / Agence</div>
+      ${days.map(day => `
+        <div class="planning-head ${day === today() ? "today-col" : ""}">
+          <span>${new Date(day + "T00:00:00").getDate()}</span>
+        </div>
+      `).join("")}
+
+      ${clientIds.length ? clientIds.map(clientId => planningRow(clientId, days)).join("") : `
+        <div class="planning-empty">Aucune reservation pour ce mois.</div>
+      `}
+    </div>
+  `;
+
+  byId("prevMonthBtn").addEventListener("click", () => {
+    calendarMonth -= 1;
+    if (calendarMonth < 0) {
+      calendarMonth = 11;
+      calendarYear -= 1;
+    }
     renderCalendar();
   });
 
-  byId("nextYearBtn").addEventListener("click", () => {
-    calendarYear += 1;
+  byId("nextMonthBtn").addEventListener("click", () => {
+    calendarMonth += 1;
+    if (calendarMonth > 11) {
+      calendarMonth = 0;
+      calendarYear += 1;
+    }
+    renderCalendar();
+  });
+
+  byId("monthPicker").addEventListener("change", event => {
+    const [year, month] = event.target.value.split("-").map(Number);
+    calendarYear = year;
+    calendarMonth = month - 1;
     renderCalendar();
   });
 
@@ -391,53 +436,43 @@ function renderCalendar() {
       openReservationDetailModal(state.orders.find(o => o.id === btn.dataset.calendarDetail))
     )
   );
-
-  document.querySelectorAll("[data-arrival]").forEach(btn =>
-    btn.addEventListener("click", () => updateVisitState(btn.dataset.arrival, "visiteurs arrives"))
-  );
-
-  document.querySelectorAll("[data-return]").forEach(btn =>
-    btn.addEventListener("click", () => updateVisitState(btn.dataset.return, "retour"))
-  );
 }
 
-function monthCalendar(year, month) {
-  const monthName = new Date(year, month, 1).toLocaleDateString("fr-FR", { month: "long" });
-  const firstDay = new Date(year, month, 1);
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const startOffset = (firstDay.getDay() + 6) % 7;
+function planningRow(clientId, days) {
+  return `
+    <div class="planning-client planning-row-title">${clientName(clientId)}</div>
+    ${days.map(day => planningCell(clientId, day)).join("")}
+  `;
+}
 
-  const cells = [
-    ...Array.from({ length: startOffset }, () => `<div class="year-day empty"></div>`),
-    ...Array.from({ length: daysInMonth }, (_, index) => {
-      const date = new Date(year, month, index + 1);
-      return calendarDay(formatDateKey(date));
-    })
-  ];
+function planningCell(clientId, day) {
+  const events = state.orders.filter(o =>
+    o.status === "Reservee" &&
+    o.clientId === clientId &&
+    orderOccursOnDay(o, day)
+  );
 
   return `
-    <section class="month-card">
-      <h3>${monthName} ${year}</h3>
-      <div class="week-row">
-        <span>L</span><span>M</span><span>M</span><span>J</span><span>V</span><span>S</span><span>D</span>
-      </div>
-      <div class="month-grid">
-        ${cells.join("")}
-      </div>
-    </section>`;
+    <div class="planning-cell ${day === today() ? "today-col" : ""}">
+      ${events.map(o => `
+        <button class="planning-event ${planningEventClass(o)}" data-calendar-detail="${o.id}">
+          <strong>${o.tourName || "Reservation"}</strong>
+          <span>${firstScheduleForDay(o, day)}</span>
+        </button>
+      `).join("")}
+    </div>
+  `;
 }
 
-function calendarDay(day) {
-  const events = state.orders.filter(o => o.status === "Reservee" && orderOccursOnDay(o, day));
-  const date = new Date(day + "T00:00:00");
+function planningEventClass(order) {
+  const categories = (order.items || [])
+    .map(item => product(item.productId)?.category || "")
+    .join(" ");
 
-  return `<div class="year-day ${events.length ? "has-event" : ""}">
-    <strong>${date.getDate()}</strong>
-    ${events.map(o => `<button class="calendar-link ${o.visitState === "retour" ? "done" : ""}" data-calendar-detail="${o.id}">
-      <span>${clientName(o.clientId)}</span>
-      <small>${firstScheduleForDay(o, day)}</small>
-    </button>`).join("")}
-  </div>`;
+  if (/Hebergement/i.test(categories)) return "stay";
+  if (/Restaurant/i.test(categories)) return "food";
+  if (/Activite/i.test(categories)) return "activity";
+  return "visit";
 }
 
 function formatDateKey(date) {
