@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Reserve Reniala | Reservations</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="loginView" class="login-shell">
+    <section class="login-panel">
+      <div class="brand-row">
+        <img src="assets/logo-reniala.png" alt="Logo Reserve Reniala">
+        <div>
+          <p class="eyebrow">Reserve Reniala</p>
+          <h1>Gestion reservations</h1>
+        </div>
+      </div>
+      <form id="loginForm" class="login-form">
+        <label>
+          Adresse mail
+          <input id="loginEmail" type="email" value="admin@reniala-madagascar.com" required>
+        </label>
+        <label>
+          Code d'acces
+          <input id="loginCode" type="password" value="2026" required>
+        </label>
+        <button type="submit">Entrer</button>
+        <p class="hint">Admin: admin@reniala-madagascar.com / 2026<br>Calendrier: equipe@reniala-madagascar.com / 601</p>
+      </form>
+    </section>
+  </div>
+
+  <div id="appView" class="app-shell hidden">
+    <aside class="sidebar">
+      <div class="brand">
+        <img src="assets/logo-reniala.png" alt="">
+        <div>
+          <strong>Reserve Reniala</strong>
+          <span id="roleBadge">Admin</span>
+        </div>
+      </div>
+      <nav id="mainNav" class="nav"></nav>
+      <button id="logoutBtn" class="ghost-btn">Se deconnecter</button>
+    </aside>
+
+    <main class="workspace">
+      <header class="topbar">
+        <div>
+          <p id="sectionKicker" class="eyebrow">Tableau de bord</p>
+          <h2 id="sectionTitle">Pilotage reservations</h2>
+        </div>
+        <div class="mail-source">
+          <span>Adresse de reception</span>
+          <strong>info@reniala-madagascar.com</strong>
+        </div>
+      </header>
+
+      <section id="dashboard" class="view"></section>
+      <section id="pipeline" class="view hidden"></section>
+      <section id="clients" class="view hidden"></section>
+      <section id="products" class="view hidden"></section>
+      <section id="orders" class="view hidden"></section>
+      <section id="billing" class="view hidden"></section>
+      <section id="calendar" class="view hidden"></section>
+    </main>
+  </div>
+
+  <div id="modalRoot" class="modal-root hidden"></div>
+  <script src="app.js"></script>
+</body>
+</html>
