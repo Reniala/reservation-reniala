@@ -484,37 +484,60 @@ function formatDateKey(date) {
 
 function openReservationDetailModal(order) {
   if (!order) return;
-  const client = state.clients.find(c => c.id === order.clientId) || {};
-  modal(`<div class="row space">
-      <h3>Reservation ${order.number}</h3>
-      <button type="button" class="secondary" data-close>Fermer</button>
-    </div>
+
+  const canEdit = state.user?.role !== "Employe calendrier";
+
+  modal(`
     <div class="reservation-detail">
-      <div class="detail-grid">
-        <section class="card card-pad">
-          <h3>Client</h3>
-          <strong>${client.name || clientName(order.clientId)}</strong><br>
-          ${client.phone || ""}<br>
-          ${client.email || ""}<br>
-          ${client.address || ""}
-        </section>
-        <section class="card card-pad">
-          <h3>Reservation</h3>
-          <strong>${order.tourName || "Tour non renseigne"}</strong><br>
-          Representant: ${order.representative || "-"}<br>
-          Reference client: ${order.clientRef || "-"}<br>
-          Statut: ${order.status} / ${order.visitState || "attendu"}
-        </section>
+      <div class="row space">
+        <h3>${clientName(order.clientId)}</h3>
+        ${statusPill(order.visitState || order.status || "attendu")}
       </div>
-      <section class="card card-pad">
-        <h3>Prestations reservees</h3>
-        <div class="list">
-          ${(order.items || []).map(item => readonlyServiceHtml(item)).join("") || empty("Aucune prestation renseignee.")}
-        </div>
+
+      <section>
+        <strong>${order.tourName || "Reservation"}</strong><br>
+        Date prestation : ${formatFrenchDate(order.serviceDate)}<br>
+        Horaire : ${firstScheduleForDay(order, order.serviceDate)}<br>
+        Statut commande : ${order.status}
       </section>
+
+      <section>
+        <h4>Prestations</h4>
+        ${(order.items || []).map(readonlyServiceHtml).join("")}
+      </section>
+
       ${specialInfoHtml(order.specialInfo)}
-      <div class="notice">Consultation en lecture seule. Les employes peuvent seulement marquer les visiteurs enleves ou retournes depuis le calendrier.</div>
-    </div>`);
+
+      <div class="row" style="margin-top:14px">
+        <button class="small secondary" id="markArrivalBtn">Enleves</button>
+        <button class="small secondary" id="markReturnBtn">Retour</button>
+        ${canEdit ? `<button class="small" id="editReservationBtn">Modifier</button>` : ""}
+        <button class="small secondary" data-close>Fermer</button>
+      </div>
+    </div>
+  `);
+
+  byId("markArrivalBtn").addEventListener("click", () => {
+    order.visitState = "visiteurs arrives";
+    saveState();
+    render();
+    openReservationDetailModal(order);
+  });
+
+  byId("markReturnBtn").addEventListener("click", () => {
+    order.visitState = "retour";
+    order.status = "Retournee";
+    saveState();
+    render();
+    openReservationDetailModal(order);
+  });
+
+  if (canEdit && byId("editReservationBtn")) {
+    byId("editReservationBtn").addEventListener("click", () => {
+      closeModal();
+      openOrderModal(order);
+    });
+  }
 }
 
 function readonlyServiceHtml(item) {
