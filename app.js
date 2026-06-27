@@ -433,17 +433,10 @@ function calendarDay(day) {
 
   return `<div class="year-day ${events.length ? "has-event" : ""}">
     <strong>${date.getDate()}</strong>
-    ${events.map(o => `<div class="event ${o.visitState === "retour" ? "done" : ""}">
-      <strong>${clientName(o.clientId)}</strong><br>
-      ${o.tourName || "Reservation"}<br>
-      ${firstScheduleForDay(o, day)}<br>
-      ${statusPill(o.visitState || "attendu")}
-      <div class="row" style="margin-top:6px">
-        <button class="small secondary" data-calendar-detail="${o.id}">Details</button>
-        <button class="small secondary" data-arrival="${o.id}">Enleves</button>
-        <button class="small secondary" data-return="${o.id}">Retour</button>
-      </div>
-    </div>`).join("")}
+    ${events.map(o => `<button class="calendar-link ${o.visitState === "retour" ? "done" : ""}" data-calendar-detail="${o.id}">
+      <span>${clientName(o.clientId)}</span>
+      <small>${firstScheduleForDay(o, day)}</small>
+    </button>`).join("")}
   </div>`;
 }
 
