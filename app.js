@@ -1,5 +1,5 @@
+const API_URL = "https://script.google.com/macros/s/AKfycbzh0NHaQvFuo2inECDoBwurOQif4IHQryj32YlJz_WoASpQNThYSZ-btPPFGKjHQBNMkw/exec";
 const RESERVE = {
-  const API_URL = "https://script.google.com/macros/s/AKfycbzh0NHaQvFuo2inECDoBwurOQif4IHQryj32YlJz_WoASpQNThYSZ-btPPFGKjHQBNMkw/exec";
   name: "RESERVE RENIALA",
   details: "R.C N A00263, Stat 01299512000000018, NIF: 2000642034",
   bank: "BFV - SG Tulear, 00710/05001-005825-60",
