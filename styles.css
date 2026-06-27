@@ -693,3 +693,32 @@ th { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spa
     grid-template-columns: 1fr;
   }
 }
+.year-day {
+  min-height: 110px;
+  overflow: visible;
+  word-break: break-word;
+}
+
+.year-day .event {
+  font-size: 11px;
+  line-height: 1.35;
+  overflow: visible;
+}
+
+.year-day .event strong {
+  display: block;
+  white-space: normal;
+}
+
+.year-day .event .row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 4px;
+}
+
+.year-day .event button {
+  width: 100%;
+  min-height: 28px;
+  padding: 4px 6px;
+  font-size: 11px;
+}
