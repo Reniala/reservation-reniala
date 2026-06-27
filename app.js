@@ -163,7 +163,8 @@ function fetchJsonp(url) {
       delete window[callbackName];
     };
 
-    script.src = `${url}?callback=${callbackName}`;
+    const separator = url.includes("?") ? "&" : "?";
+    script.src = `${url}${separator}callback=${callbackName}`;
     document.body.appendChild(script);
   });
 }
