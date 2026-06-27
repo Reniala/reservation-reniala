@@ -74,7 +74,7 @@ const seed = {
 
 let state = loadState();
 let currentView = "dashboard";
-
+let calendarYear = new Date().getFullYear();
 document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("loginForm").addEventListener("submit", login);
   document.getElementById("logoutBtn").addEventListener("click", logout);
