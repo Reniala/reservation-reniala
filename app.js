@@ -198,21 +198,34 @@ function syncBilling(order) {
   return order;
 }
 
-function login(event) {
+async function login(event) {
   event.preventDefault();
+
   const email = byId("loginEmail").value.trim().toLowerCase();
   const code = byId("loginCode").value.trim();
-  if (email === "admin@reniala-madagascar.com" && code === "2026") {
-    state.user = { email, role: "Administrateur principal" };
-  } else if (email === "equipe@reniala-madagascar.com" && code === "601") {
-    state.user = { email, role: "Employe calendrier" };
-    currentView = "calendar";
-  } else {
-    alert("Adresse mail ou code incorrect.");
-    return;
+
+  try {
+    const result = await fetchJsonp(
+      `${API_URL}?action=login&email=${encodeURIComponent(email)}&code=${encodeURIComponent(code)}`
+    );
+
+    if (!result.success) {
+      alert(result.error || "Adresse mail ou code incorrect.");
+      return;
+    }
+
+    state.user = result.user;
+
+    if (state.user.role === "Employe calendrier") {
+      currentView = "calendar";
+    }
+
+    saveState();
+    enterApp();
+  } catch (error) {
+    alert("Connexion impossible avec Google Sheet.");
+    console.warn(error);
   }
-  saveState();
-  enterApp();
 }
 
 function logout() {
