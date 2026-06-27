@@ -768,3 +768,110 @@ th { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spa
     grid-template-columns: 1fr;
   }
 }
+.planning-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.planning-toolbar strong {
+  font-size: 18px;
+  text-transform: capitalize;
+}
+
+.planning-toolbar input {
+  max-width: 180px;
+}
+
+.planning-table {
+  display: grid;
+  grid-template-columns: 240px repeat(31, minmax(54px, 1fr));
+  overflow-x: auto;
+  border: 1px solid #d7dfcf;
+  background: #d7dfcf;
+  gap: 1px;
+}
+
+.planning-head,
+.planning-client,
+.planning-cell {
+  background: #fff;
+  min-height: 48px;
+  padding: 8px;
+}
+
+.planning-head {
+  font-weight: 700;
+  text-align: center;
+  color: #52604f;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+.planning-client {
+  position: sticky;
+  left: 0;
+  z-index: 3;
+  font-weight: 700;
+}
+
+.planning-row-title {
+  background: #f5f7f1;
+}
+
+.planning-cell {
+  min-height: 70px;
+}
+
+.today-col {
+  background: #fff8e6;
+}
+
+.planning-event {
+  display: block;
+  width: 100%;
+  border: 0;
+  border-radius: 6px;
+  padding: 6px;
+  margin-bottom: 4px;
+  text-align: left;
+  cursor: pointer;
+  color: #102024;
+  font-size: 11px;
+}
+
+.planning-event strong,
+.planning-event span {
+  display: block;
+  white-space: normal;
+}
+
+.planning-event.visit {
+  background: #dcefc2;
+  border-left: 4px solid #6a9633;
+}
+
+.planning-event.activity {
+  background: #fde7c8;
+  border-left: 4px solid #e88a19;
+}
+
+.planning-event.stay {
+  background: #d8edf5;
+  border-left: 4px solid #3a91ad;
+}
+
+.planning-event.food {
+  background: #f5dcea;
+  border-left: 4px solid #b4568b;
+}
+
+.planning-empty {
+  grid-column: 1 / -1;
+  background: #fff;
+  padding: 20px;
+  color: #65705f;
+}
