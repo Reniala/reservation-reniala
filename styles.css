@@ -959,3 +959,37 @@ th { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spa
   background: #f6dbea;
   border-left: 5px solid #b4568b;
 }
+
+#calendar {
+  overflow-x: auto;
+  padding-bottom: 12px;
+}
+
+.planning-table {
+  width: max-content;
+  min-width: max-content;
+  grid-template-columns: 300px repeat(31, 120px);
+}
+
+.planning-head,
+.planning-client,
+.planning-cell {
+  box-sizing: border-box;
+}
+
+.planning-event {
+  width: 100%;
+  min-width: 104px;
+  white-space: normal;
+}
+
+.planning-event strong {
+  display: block;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.planning-event span {
+  display: block;
+  white-space: normal;
+}
