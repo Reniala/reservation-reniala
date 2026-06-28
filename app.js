@@ -1206,7 +1206,15 @@ function documentHtml(order, type) {
     <div class="doc-head">
       <div class="doc-logo-block">
         <img class="doc-logo" src="assets/logo-reniala.png" alt="Logo Reserve Reniala">
-        <div><strong>${RESERVE.name}</strong><br>${RESERVE.details}<br>${RESERVE.bank}<br>${RESERVE.address}<br>${RESERVE.email}</div>
+    <div>
+      <strong>${RESERVE.name}</strong><br>
+      R.C N A00263<br>
+      Stat 01299512000000018<br>
+      NIF: 2000642034<br>
+      ${RESERVE.bank}<br>
+      ${RESERVE.address}<br>
+      ${RESERVE.email}
+    </div>
       </div>
       <div class="doc-client-block">
         <h3>Client :</h3>
