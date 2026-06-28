@@ -1066,3 +1066,40 @@ th { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spa
   line-height: 1.1 !important;
   margin-top: 1px !important;
 }
+
+.report-tabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.kpi-card {
+  background: #fff;
+  border: 1px solid #dce6d2;
+  border-radius: 8px;
+  padding: 14px;
+}
+
+.kpi-card span {
+  display: block;
+  color: #5f6b5b;
+  font-size: 13px;
+  margin-bottom: 6px;
+}
+
+.kpi-card strong {
+  font-size: 22px;
+}
+
+@media (max-width: 900px) {
+  .kpi-grid {
+    grid-template-columns: 1fr;
+  }
+}
