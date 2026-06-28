@@ -295,7 +295,8 @@ const titles = {
   products: "Prestations et tarifs",
   orders: "Reservations et commandes",
   billing: "Factures et paiements",
-  calendar: "Calendrier des prestations"
+  calendar: "Calendrier des prestations",
+  settings: "Parametres"
 };
 
 const renderers = { dashboard: renderDashboard, pipeline: renderPipeline, clients: renderClients, products: renderProducts, orders: renderOrders, billing: renderBilling, calendar: renderCalendar, settings: renderSettings };
