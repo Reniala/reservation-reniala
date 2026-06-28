@@ -28,7 +28,7 @@ const NAV = [
   ["products", "Produits"],
   ["orders", "Commandes"],
   ["billing", "Facturation"],
-  ["calendar", "Calendrier"]
+  ["calendar", "Calendrier"],
   ["settings", "Parametres"]
 ];
 
