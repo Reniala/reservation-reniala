@@ -298,7 +298,7 @@ const titles = {
   calendar: "Calendrier des prestations"
 };
 
-const renderers = { dashboard: renderDashboard, pipeline: renderPipeline, clients: renderClients, products: renderProducts, orders: renderOrders, billing: renderBilling, calendar: renderCalendar };
+const renderers = { dashboard: renderDashboard, pipeline: renderPipeline, clients: renderClients, products: renderProducts, orders: renderOrders, billing: renderBilling, calendar: renderCalendar, settings: renderSettings };
 
 function renderDashboard() {
   const isAdmin = state.user?.role === "Administrateur principal";
@@ -1196,6 +1196,7 @@ function openDocumentModal(order, type = "devis", closable = true) {
 function documentHtml(order, type) {
   const client = state.clients.find(c => c.id === order.clientId) || {};
   const visibleNumber = documentNumber(order, type);
+  const settings = reserveSettings();
   const totalLabel = type === "avoir" ? "Montant de l'avoir" : type === "annulation" ? "Frais d'annulation facturables" : "Total";
   const totalAmount = type === "avoir" ? orderCredit(order) : type === "annulation" ? billableTotal(order) : orderTotal(order);
   const noticeText = type === "avoir"
@@ -1206,17 +1207,18 @@ function documentHtml(order, type) {
   return `<div class="document-preview">
     <div class="doc-head">
       <div class="doc-logo-block">
-        <img class="doc-logo" src="assets/logo-reniala.png" alt="Logo Reserve Reniala">
-    <div>
-      <strong>${RESERVE.name}</strong><br>
-      R.C N A00263<br>
-      Stat 01299512000000018<br>
-      NIF: 2000642034<br>
-      ${RESERVE.bank}<br>
-      ${RESERVE.address}<br>
-      ${RESERVE.email}
-    </div>
-      </div>
+  <img class="doc-logo" src="${settings.logo}" alt="Logo Reserve Reniala">
+  <div>
+    <strong>${settings.name}</strong><br>
+    ${settings.rcs}<br>
+    Stat ${settings.stat}<br>
+    NIF: ${settings.nif}<br>
+    Carte fiscale: ${settings.fiscalCard || "-"}<br>
+    ${settings.bank}<br>
+    ${settings.address}<br>
+    ${settings.email}
+  </div>
+</div>
       <div class="doc-client-block">
         <h3>Client :</h3>
         <strong>${client.name || ""}</strong><br>${client.address || ""}<br>${client.email || ""}<br>${client.phone || ""}<br>RC: ${client.rc || "-"}<br>NIF: ${client.nif || "-"}<br>Stat: ${client.stat || "-"}
@@ -1460,3 +1462,86 @@ function closeModal() {
   byId("modalRoot").innerHTML = "";
 }
 
+function reserveSettings() {
+  return {
+    name: "RESERVE RENIALA",
+    rcs: "R.C N A00263",
+    stat: "01299512000000018",
+    nif: "2000642034",
+    bank: "BFV - SG Tulear, 00710/05001-005825-60",
+    email: "info@reniala-madagascar.com",
+    address: "BP 58 Tulear Mangily 601 Madagascar",
+    fiscalCard: "",
+    logo: "assets/logo-reniala.png",
+    salesTerms: RESERVE.salesTerms.join("\n"),
+    ...(state.settings || {})
+  };
+}
+
+function renderSettings() {
+  if (state.user?.role !== "Administrateur principal") {
+    byId("settings").innerHTML = empty("Acces reserve a l'administrateur.");
+    return;
+  }
+
+  const s = reserveSettings();
+
+  byId("settings").innerHTML = `
+    <div class="card card-pad">
+      <div class="row space">
+        <h3>Parametres</h3>
+        <button id="saveSettingsBtn">Enregistrer</button>
+      </div>
+
+      <form id="settingsForm" class="form-grid">
+        ${input("name", "Nom legal", s.name)}
+        ${input("email", "Email", s.email)}
+        ${input("address", "Adresse", s.address)}
+        ${input("rcs", "RCS", s.rcs)}
+        ${input("stat", "STAT", s.stat)}
+        ${input("nif", "NIF", s.nif)}
+        ${input("fiscalCard", "Carte fiscale", s.fiscalCard)}
+        ${input("bank", "RIB / banque", s.bank)}
+
+        <label>Logo Reniala
+          <input id="settingsLogoInput" type="file" accept="image/*">
+        </label>
+
+        <label class="wide">Conditions de vente
+          <textarea name="salesTerms" style="min-height:140px">${s.salesTerms || ""}</textarea>
+        </label>
+
+        <div class="wide">
+          <strong>Apercu logo</strong><br>
+          <img id="settingsLogoPreview" src="${s.logo}" style="max-width:160px;max-height:160px;margin-top:10px">
+        </div>
+      </form>
+    </div>
+  `;
+
+  let logoValue = s.logo;
+
+  byId("settingsLogoInput").addEventListener("change", event => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      logoValue = reader.result;
+      byId("settingsLogoPreview").src = logoValue;
+    };
+    reader.readAsDataURL(file);
+  });
+
+  byId("saveSettingsBtn").addEventListener("click", () => {
+    const data = Object.fromEntries(new FormData(byId("settingsForm")));
+    state.settings = {
+      ...data,
+      logo: logoValue
+    };
+
+    saveState();
+    alert("Parametres enregistres.");
+    render();
+  });
+}
