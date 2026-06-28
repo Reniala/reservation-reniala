@@ -29,6 +29,7 @@ const NAV = [
   ["orders", "Commandes"],
   ["billing", "Facturation"],
   ["calendar", "Calendrier"]
+  ["settings", "Parametres"]
 ];
 
 const PRODUCTS = [
