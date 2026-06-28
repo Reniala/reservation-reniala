@@ -85,6 +85,7 @@ let state = loadState();
 let currentView = "dashboard";
 let calendarYear = new Date().getFullYear();
 let calendarMonth = new Date().getMonth();
+let dashboardReport = "overview";
 document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("loginForm").addEventListener("submit", login);
   document.getElementById("logoutBtn").addEventListener("click", logout);
@@ -299,28 +300,212 @@ const titles = {
 const renderers = { dashboard: renderDashboard, pipeline: renderPipeline, clients: renderClients, products: renderProducts, orders: renderOrders, billing: renderBilling, calendar: renderCalendar };
 
 function renderDashboard() {
-  const weekOrders = state.orders.filter(o => daysBetween(o.orderDate, today()) <= 7);
-  const monthOrders = state.orders.filter(o => new Date(o.orderDate).getMonth() === new Date().getMonth());
-  const revenue = state.orders.filter(o => o.status !== "Annulee").reduce((s, o) => s + orderTotal(o), 0);
-  const topProducts = {};
-  state.orders.forEach(o => o.items.forEach(i => topProducts[product(i.productId)?.name || "Produit"] = (topProducts[product(i.productId)?.name || "Produit"] || 0) + i.qty));
-  const rows = Object.entries(topProducts).sort((a,b) => b[1]-a[1]).slice(0,5);
+  const isAdmin = state.user?.role === "Administrateur principal";
+
+  if (!isAdmin) {
+    byId("dashboard").innerHTML = `
+      <div class="card card-pad">
+        <h3>Calendrier</h3>
+        <p class="muted">Acces employe limite au calendrier des prestations.</p>
+      </div>`;
+    return;
+  }
+
   byId("dashboard").innerHTML = `
-    <div class="grid cols-4">
-      ${metric("Commandes semaine", weekOrders.length)}
-      ${metric("Commandes mois", monthOrders.length)}
-      ${metric("CA confirme", fmtMoney(revenue))}
-      ${metric("Mails en attente", state.mails.filter(m => m.status === "en attente").length)}
+    <div class="report-tabs">
+      ${[
+        ["overview", "Vue generale"],
+        ["sales", "Ventes"],
+        ["clients", "Clients"],
+        ["products", "Produits"],
+        ["payments", "Paiements"],
+        ["refunds", "Remboursements"],
+        ["monthly", "Bilan mensuel"],
+        ["yearly", "Bilan annuel"]
+      ].map(([id, label]) => `
+        <button class="small ${dashboardReport === id ? "" : "secondary"}" data-report="${id}">
+          ${label}
+        </button>
+      `).join("")}
     </div>
-    <div class="grid cols-2" style="margin-top:16px">
-      <div class="card card-pad"><h3>Produits les plus demandes</h3>${rows.length ? table(["Produit","Quantite"], rows) : empty("Aucune commande encore.")}</div>
-      <div class="card card-pad"><h3>Suivi facturation</h3>${table(["Statut","Nombre"], [
-        ["Entierement facture", state.orders.filter(o => paymentStatus(o) === "payee").length],
-        ["Acompte recu", state.orders.filter(o => paymentStatus(o) === "acompte").length],
-        ["A payer", state.orders.filter(o => paymentStatus(o) === "a payer").length],
-        ["Rien a facturer", state.orders.filter(o => o.status === "Annulee").length]
-      ])}</div>
-    </div>`;
+    <div id="dashboardReport"></div>
+  `;
+
+  document.querySelectorAll("[data-report]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      dashboardReport = btn.dataset.report;
+      renderDashboard();
+    });
+  });
+
+  renderDashboardReport();
+}
+
+function renderDashboardReport() {
+  const target = byId("dashboardReport");
+  const reports = {
+    overview: renderAccountingOverview,
+    sales: renderSalesReport,
+    clients: renderClientsAccountingReport,
+    products: renderProductsAccountingReport,
+    payments: renderPaymentsReport,
+    refunds: renderRefundsReport,
+    monthly: renderMonthlyReport,
+    yearly: renderYearlyReport
+  };
+
+  target.innerHTML = (reports[dashboardReport] || renderAccountingOverview)();
+}
+
+function accountingTotals(orders = state.orders) {
+  const validOrders = orders.filter(o => o.status !== "Annulee");
+  const cancelledOrders = orders.filter(o => o.status === "Annulee");
+
+  const total = validOrders.reduce((sum, o) => sum + orderTotal(o), 0);
+  const billable = orders.reduce((sum, o) => sum + billableTotal(o), 0);
+  const paid = orders.reduce((sum, o) => sum + orderPaid(o), 0);
+  const balance = orders.reduce((sum, o) => sum + orderBalance(o), 0);
+  const credit = orders.reduce((sum, o) => sum + orderCredit(o), 0);
+
+  return { total, billable, paid, balance, credit, validOrders, cancelledOrders };
+}
+
+function kpiCard(label, value) {
+  return `<article class="kpi-card"><span>${label}</span><strong>${value}</strong></article>`;
+}
+
+function renderAccountingOverview() {
+  const t = accountingTotals();
+
+  return `
+    <div class="kpi-grid">
+      ${kpiCard("Chiffre d'affaires", fmtMoney(t.billable))}
+      ${kpiCard("Encaisse", fmtMoney(t.paid))}
+      ${kpiCard("Reste a encaisser", fmtMoney(t.balance))}
+      ${kpiCard("Avoirs / remboursements", fmtMoney(t.credit))}
+      ${kpiCard("Commandes", state.orders.length)}
+      ${kpiCard("Annulations", t.cancelledOrders.length)}
+    </div>
+  `;
+}
+
+function renderSalesReport() {
+  const rows = state.orders.map(o => [
+    o.number || o.id,
+    clientName(o.clientId),
+    o.serviceDate || "-",
+    o.status || "-",
+    fmtMoney(orderTotal(o)),
+    fmtMoney(orderPaid(o)),
+    fmtMoney(orderBalance(o))
+  ]);
+
+  return `<div class="card">${table(["Commande", "Client", "Date", "Statut", "Total", "Paye", "Reste"], rows)}</div>`;
+}
+
+function renderClientsAccountingReport() {
+  const map = {};
+
+  state.orders.forEach(o => {
+    const name = clientName(o.clientId);
+    map[name] = map[name] || { count: 0, total: 0, paid: 0, balance: 0 };
+    map[name].count += 1;
+    map[name].total += billableTotal(o);
+    map[name].paid += orderPaid(o);
+    map[name].balance += orderBalance(o);
+  });
+
+  const rows = Object.entries(map)
+    .sort((a, b) => b[1].total - a[1].total)
+    .map(([name, v]) => [name, v.count, fmtMoney(v.total), fmtMoney(v.paid), fmtMoney(v.balance)]);
+
+  return `<div class="card">${table(["Client", "Commandes", "CA", "Paye", "Reste"], rows)}</div>`;
+}
+
+function renderProductsAccountingReport() {
+  const map = {};
+
+  state.orders.forEach(o => {
+    (o.items || []).forEach(item => {
+      const p = product(item.productId);
+      const name = p?.name || "Produit";
+      map[name] = map[name] || { qty: 0, total: 0, category: p?.category || "-" };
+      map[name].qty += Number(item.qty || 0);
+      map[name].total += Number(item.qty || 0) * Number(item.price || 0);
+    });
+  });
+
+  const rows = Object.entries(map)
+    .sort((a, b) => b[1].total - a[1].total)
+    .map(([name, v]) => [name, v.category, v.qty, fmtMoney(v.total)]);
+
+  return `<div class="card">${table(["Produit", "Categorie", "Quantite", "CA"], rows)}</div>`;
+}
+
+function renderPaymentsReport() {
+  const rows = state.orders.map(o => [
+    o.number || o.id,
+    clientName(o.clientId),
+    o.paymentTerms || "-",
+    fmtMoney(orderPaid(o)),
+    fmtMoney(orderBalance(o)),
+    paymentStatus(o)
+  ]);
+
+  return `<div class="card">${table(["Commande", "Client", "Condition", "Paye", "Reste", "Statut"], rows)}</div>`;
+}
+
+function renderRefundsReport() {
+  const rows = state.orders
+    .filter(o => o.status === "Annulee" || orderCredit(o) > 0)
+    .map(o => [
+      o.number || o.id,
+      clientName(o.clientId),
+      o.status,
+      fmtMoney(orderTotal(o)),
+      fmtMoney(billableTotal(o)),
+      fmtMoney(orderCredit(o))
+    ]);
+
+  return `<div class="card">${rows.length ? table(["Commande", "Client", "Statut", "Initial", "Facturable", "Avoir"], rows) : empty("Aucun remboursement ou avoir.")}</div>`;
+}
+
+function renderMonthlyReport() {
+  const map = {};
+
+  state.orders.forEach(o => {
+    const key = (o.serviceDate || o.orderDate || today()).slice(0, 7);
+    map[key] = map[key] || { orders: [], total: 0, paid: 0, balance: 0 };
+    map[key].orders.push(o);
+    map[key].total += billableTotal(o);
+    map[key].paid += orderPaid(o);
+    map[key].balance += orderBalance(o);
+  });
+
+  const rows = Object.entries(map)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([month, v]) => [month, v.orders.length, fmtMoney(v.total), fmtMoney(v.paid), fmtMoney(v.balance)]);
+
+  return `<div class="card">${table(["Mois", "Commandes", "CA", "Paye", "Reste"], rows)}</div>`;
+}
+
+function renderYearlyReport() {
+  const map = {};
+
+  state.orders.forEach(o => {
+    const key = (o.serviceDate || o.orderDate || today()).slice(0, 4);
+    map[key] = map[key] || { orders: [], total: 0, paid: 0, balance: 0 };
+    map[key].orders.push(o);
+    map[key].total += billableTotal(o);
+    map[key].paid += orderPaid(o);
+    map[key].balance += orderBalance(o);
+  });
+
+  const rows = Object.entries(map)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([year, v]) => [year, v.orders.length, fmtMoney(v.total), fmtMoney(v.paid), fmtMoney(v.balance)]);
+
+  return `<div class="card">${table(["Annee", "Commandes", "CA", "Paye", "Reste"], rows)}</div>`;
 }
 
 function metric(label, value) {
