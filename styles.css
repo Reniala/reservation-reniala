@@ -993,3 +993,38 @@ th { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spa
   display: block;
   white-space: normal;
 }
+
+.planning-head,
+.planning-client,
+.planning-cell {
+  min-height: 44px;
+  padding: 5px;
+}
+
+.planning-cell {
+  min-height: 72px;
+}
+
+.planning-row-title {
+  padding-top: 10px;
+  font-size: 14px;
+}
+
+.planning-event {
+  min-height: 46px;
+  padding: 5px 6px;
+  margin-bottom: 3px;
+  border-radius: 6px;
+}
+
+.planning-event strong {
+  font-size: 11px;
+  line-height: 1.15;
+  max-height: 24px;
+}
+
+.planning-event span {
+  font-size: 10px;
+  line-height: 1.15;
+  margin-top: 2px;
+}
