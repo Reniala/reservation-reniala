@@ -9,7 +9,7 @@ function today(offset = 0) {
 }
 const RESERVE = {
   name: "RESERVE RENIALA",
-  details: "R.C N A00263, Stat 01299512000000018, NIF: 2000642034",
+  details: "R.C N A00263<br>Stat 01299512000000018<br>NIF: 2000642034",
   bank: "BFV - SG Tulear, 00710/05001-005825-60",
   address: "BP 58 Tulear Mangily 601 Madagascar",
   email: "info@reniala-madagascar.com",
