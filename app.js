@@ -319,6 +319,9 @@ function renderDashboard() {
         ["clients", "Clients"],
         ["products", "Produits"],
         ["payments", "Paiements"],
+        ["bank", "Banque"],
+        ["cash", "Especes"],
+        ["mobile", "Mobile Money"],
         ["refunds", "Remboursements"],
         ["monthly", "Bilan mensuel"],
         ["yearly", "Bilan annuel"]
@@ -349,6 +352,9 @@ function renderDashboardReport() {
     clients: renderClientsAccountingReport,
     products: renderProductsAccountingReport,
     payments: renderPaymentsReport,
+    bank: () => renderPaymentGroupReport("bank"),
+    cash: () => renderPaymentGroupReport("cash"),
+    mobile: () => renderPaymentGroupReport("mobile"),
     refunds: renderRefundsReport,
     monthly: renderMonthlyReport,
     yearly: renderYearlyReport
@@ -500,6 +506,72 @@ function renderRefundsReport() {
   return `<div class="card">${rows.length ? table(["Commande", "Client", "Statut", "Initial", "Facturable", "Avoir"], rows) : empty("Aucun remboursement ou avoir.")}</div>`;
 }
 
+function paymentGroup(method) {
+  const value = String(method || "").toLowerCase();
+
+  if (value.includes("virement") || value.includes("carte") || value.includes("cheque") || value.includes("chèque")) {
+    return "bank";
+  }
+
+  if (value.includes("espece") || value.includes("espèce")) {
+    return "cash";
+  }
+
+  if (value.includes("mobile")) {
+    return "mobile";
+  }
+
+  return "other";
+}
+
+function paymentGroupLabel(group) {
+  if (group === "bank") return "Banque";
+  if (group === "cash") return "Especes";
+  if (group === "mobile") return "Mobile Money";
+  return "Autres";
+}
+
+function renderPaymentGroupReport(group) {
+  const rows = [];
+  let total = 0;
+
+  state.orders.forEach(order => {
+    (order.payments || []).forEach(payment => {
+      if (paymentGroup(payment.method) !== group) return;
+
+      const amount = Number(payment.amount || 0);
+      total += amount;
+
+      rows.push([
+        payment.date || "-",
+        order.number || order.id,
+        clientName(order.clientId),
+        payment.type || "-",
+        payment.method || "-",
+        payment.reference || "-",
+        fmtMoney(amount)
+      ]);
+    });
+  });
+
+  return `
+    <div style="
+      display:grid;
+      grid-template-columns:repeat(3, minmax(190px, 1fr));
+      gap:14px;
+      margin-bottom:16px;
+    ">
+      ${kpiCard(paymentGroupLabel(group), fmtMoney(total))}
+      ${kpiCard("Nombre de paiements", rows.length)}
+      ${kpiCard("Moyenne", rows.length ? fmtMoney(total / rows.length) : fmtMoney(0))}
+    </div>
+    <div class="card">
+      ${rows.length
+        ? table(["Date", "Commande", "Client", "Type", "Mode", "Reference", "Montant"], rows)
+        : empty("Aucun paiement dans cette categorie.")}
+    </div>
+  `;
+}
 function renderMonthlyReport() {
   const map = {};
 
