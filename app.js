@@ -126,9 +126,9 @@ async function syncFromCloud() {
         user: currentUser
       };
       localStorage.setItem("renialaAppState", JSON.stringify(state));
-    } else {
+    } else if (state.user?.role === "Administrateur principal") {
       await saveRemoteState();
-    }
+}
   } catch (error) {
     console.warn("Synchronisation Google Sheet impossible", error);
   }
@@ -229,7 +229,7 @@ async function login(event) {
       currentView = "calendar";
     }
 
-    saveState();
+    localStorage.setItem("renialaAppState", JSON.stringify(state));
     enterApp();
   } catch (error) {
     alert("Connexion impossible avec Google Sheet.");
@@ -239,7 +239,7 @@ async function login(event) {
 
 function logout() {
   state.user = null;
-  saveState();
+  localStorage.setItem("renialaAppState", JSON.stringify(state));
   byId("appView").classList.add("hidden");
   byId("loginView").classList.remove("hidden");
 }
