@@ -2,6 +2,11 @@ const API_URL = "https://script.google.com/macros/s/AKfycbzh0NHaQvFuo2inECDoBwur
 function uid() {
   return Math.random().toString(36).slice(2, 9);
 }
+function today(offset = 0) {
+  const d = new Date();
+  d.setDate(d.getDate() + offset);
+  return d.toISOString().slice(0, 10);
+}
 const RESERVE = {
   name: "RESERVE RENIALA",
   details: "R.C N A00263, Stat 01299512000000018, NIF: 2000642034",
