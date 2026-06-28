@@ -371,14 +371,44 @@ function accountingTotals(orders = state.orders) {
 }
 
 function kpiCard(label, value) {
-  return `<article class="kpi-card"><span>${label}</span><strong>${value}</strong></article>`;
+  return `
+    <article style="
+      background:#ffffff;
+      border:1px solid #d9e4ce;
+      border-radius:8px;
+      padding:16px;
+      min-height:90px;
+      box-shadow:0 1px 3px rgba(16,32,36,0.08);
+      display:flex;
+      flex-direction:column;
+      justify-content:space-between;
+    ">
+      <span style="
+        display:block;
+        color:#5c6b58;
+        font-size:13px;
+        font-weight:700;
+        margin-bottom:8px;
+      ">${label}</span>
+      <strong style="
+        display:block;
+        color:#102024;
+        font-size:24px;
+        line-height:1.1;
+      ">${value}</strong>
+    </article>`;
 }
 
 function renderAccountingOverview() {
   const t = accountingTotals();
 
   return `
-    <div class="kpi-grid">
+    <div style="
+      display:grid;
+      grid-template-columns:repeat(3, minmax(190px, 1fr));
+      gap:14px;
+      align-items:stretch;
+    ">
       ${kpiCard("Chiffre d'affaires", fmtMoney(t.billable))}
       ${kpiCard("Encaisse", fmtMoney(t.paid))}
       ${kpiCard("Reste a encaisser", fmtMoney(t.balance))}
