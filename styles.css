@@ -1028,3 +1028,41 @@ th { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spa
   line-height: 1.15;
   margin-top: 2px;
 }
+
+#calendar .planning-table .planning-cell {
+  min-height: 48px !important;
+  height: 48px !important;
+  padding: 3px !important;
+}
+
+#calendar .planning-table .planning-client {
+  min-height: 48px !important;
+  height: 48px !important;
+  padding: 8px 10px !important;
+}
+
+#calendar .planning-table .planning-head {
+  min-height: 36px !important;
+  height: 36px !important;
+  padding: 6px !important;
+}
+
+#calendar .planning-table .planning-event {
+  min-height: 38px !important;
+  height: 38px !important;
+  padding: 4px 5px !important;
+  margin-bottom: 2px !important;
+}
+
+#calendar .planning-table .planning-event strong {
+  font-size: 10px !important;
+  line-height: 1.1 !important;
+  max-height: 12px !important;
+  overflow: hidden !important;
+}
+
+#calendar .planning-table .planning-event span {
+  font-size: 10px !important;
+  line-height: 1.1 !important;
+  margin-top: 1px !important;
+}
