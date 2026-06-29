@@ -691,7 +691,7 @@ function clientInvoiceRows(period = "month") {
       return (a.serviceDate || "").localeCompare(b.serviceDate || "");
     })
     .map(o => {
-      const invoiceNumber = o.invoiceNumber || documentNumber(o, "facture");
+      const invoiceNumber = o.invoiceNumber || o.number || o.quoteNumber || o.id;
       const date = o.orderDate || o.serviceDate || today();
       const periodValue = period === "year" ? date.slice(0, 4) : date.slice(0, 7);
       const paid = orderBalance(o) <= 0 ? "Payé" : "Non payé";
