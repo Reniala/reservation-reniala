@@ -1199,7 +1199,7 @@ th { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spa
   }
 
   .document-preview {
-    min-height: 277mm !important;
+    min-height: calc(297mm - 20mm) !important;
     display: flex !important;
     flex-direction: column !important;
     box-shadow: none !important;
