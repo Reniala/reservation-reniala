@@ -1167,14 +1167,14 @@ th { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spa
 }
 
 .document-preview {
-  min-height: 277mm;
-  display: flex;
-  flex-direction: column;
-  box-sizing: border-box;
+  min-height: 297mm !important;
+  display: flex !important;
+  flex-direction: column !important;
+  box-sizing: border-box !important;
 }
 
 .doc-bottom {
-  margin-top: auto;
+  margin-top: auto !important;
   padding-top: 18px;
   break-inside: avoid;
   page-break-inside: avoid;
@@ -1199,13 +1199,13 @@ th { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spa
   }
 
   .document-preview {
-    min-height: 277mm;
-    display: flex;
-    flex-direction: column;
-    box-shadow: none;
+    min-height: 277mm !important;
+    display: flex !important;
+    flex-direction: column !important;
+    box-shadow: none !important;
   }
 
   .doc-bottom {
-    margin-top: auto;
+    margin-top: auto !important;
   }
 }
