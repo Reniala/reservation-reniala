@@ -88,6 +88,8 @@ let calendarYear = new Date().getFullYear();
 let calendarMonth = new Date().getMonth();
 let dashboardReport = "overview";
 let accountingClientFilter = "all";
+let accountingMonthFilter = "all";
+let accountingYearFilter = "all";
 document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("loginForm").addEventListener("submit", login);
   document.getElementById("logoutBtn").addEventListener("click", logout);
@@ -396,7 +398,7 @@ function renderMonthlyReport() {
         <h3>Factures par client - mensuel</h3>
         <button class="small secondary" onclick="copyAccountingCsv('month')">Copier CSV</button>
       </div>
-      ${accountingClientSelector()}
+      ${accountingFilters("month")}
       ${clientInvoiceTable("month")}
     </div>
   `;
@@ -637,6 +639,7 @@ function renderMonthlyReport() {
         <h3>Factures par client - mensuel</h3>
         <button class="small secondary" onclick="copyAccountingCsv('month')">Copier CSV</button>
       </div>
+      ${accountingFilters("month")}
       ${clientInvoiceTable("month")}
     </div>
   `;
@@ -669,37 +672,72 @@ function renderYearlyReport() {
         <h3>Factures par client - annuel</h3>
         <button class="small secondary" onclick="copyAccountingCsv('year')">Copier CSV</button>
       </div>
-      ${accountingClientSelector()}
+      ${accountingFilters("year")}
       ${clientInvoiceTable("year")}
     </div>
   `;
 }
 
-function accountingClientSelector() {
-  const options = [
+function accountingFilters(period = "month") {
+  const clientOptions = [
     `<option value="all"${accountingClientFilter === "all" ? " selected" : ""}>Tous les clients</option>`,
     ...state.clients.map(client =>
       `<option value="${client.id}"${accountingClientFilter === client.id ? " selected" : ""}>${client.name}</option>`
     )
   ].join("");
 
-  setTimeout(() => {
-    const select = byId("accountingClientFilter");
-    if (!select) return;
+  const periods = [...new Set(state.orders.map(o => {
+    const date = o.orderDate || o.serviceDate || today();
+    return period === "year" ? date.slice(0, 4) : date.slice(0, 7);
+  }))].sort();
 
-    select.addEventListener("change", event => {
-      accountingClientFilter = event.target.value;
-      renderDashboardReport();
-    });
+  const currentPeriodValue = period === "year" ? accountingYearFilter : accountingMonthFilter;
+
+  const periodOptions = [
+    `<option value="all"${currentPeriodValue === "all" ? " selected" : ""}>Toutes les periodes</option>`,
+    ...periods.map(value =>
+      `<option value="${value}"${currentPeriodValue === value ? " selected" : ""}>${value}</option>`
+    )
+  ].join("");
+
+  setTimeout(() => {
+    const clientSelect = byId("accountingClientFilter");
+    if (clientSelect) {
+      clientSelect.addEventListener("change", event => {
+        accountingClientFilter = event.target.value;
+        renderDashboardReport();
+      });
+    }
+
+    const periodSelect = byId("accountingPeriodFilter");
+    if (periodSelect) {
+      periodSelect.addEventListener("change", event => {
+        if (period === "year") {
+          accountingYearFilter = event.target.value;
+        } else {
+          accountingMonthFilter = event.target.value;
+        }
+        renderDashboardReport();
+      });
+    }
   }, 0);
 
   return `
-    <label style="display:block;margin:12px 0;max-width:360px">
-      Client
-      <select id="accountingClientFilter">
-        ${options}
-      </select>
-    </label>
+    <div class="row" style="gap:14px;margin:12px 0;align-items:end;flex-wrap:wrap">
+      <label style="display:block;max-width:360px">
+        Client
+        <select id="accountingClientFilter">
+          ${clientOptions}
+        </select>
+      </label>
+
+      <label style="display:block;max-width:220px">
+        ${period === "year" ? "Annee" : "Mois"}
+        <select id="accountingPeriodFilter">
+          ${periodOptions}
+        </select>
+      </label>
+    </div>
   `;
 }
 
