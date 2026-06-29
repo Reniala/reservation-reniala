@@ -1184,7 +1184,7 @@ function openDocumentModal(order, type = "devis", closable = true) {
   modal(`<div class="row space modal-actions"><h3>${labelDoc(type)} ${visibleNumber}</h3><div class="row"><button id="printBtn">Imprimer / PDF</button><button id="sendDocBtn" class="secondary">Envoyer par mail</button><button class="secondary" data-close>Fermer</button></div></div>${doc}`);
   byId("printBtn").addEventListener("click", () => {
   const oldTitle = document.title;
-  const fileName = `${labelDoc(type)} ${visibleNumber}`.replace(/[\/\\:*?"<>|]/g, "-");
+  const fileName = `${visibleNumber} - ${order.tourName || "Reservation"}`.replace(/[\/\\:*?"<>|]/g, "-");
 
   document.title = fileName;
   window.print();
