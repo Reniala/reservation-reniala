@@ -347,6 +347,28 @@ function renderDashboard() {
   renderDashboardReport();
 }
 
+function renderDashboardReport() {
+  const target = byId("dashboardReport");
+
+  if (!target) return;
+
+  const reports = {
+    overview: renderAccountingOverview,
+    sales: renderSalesReport,
+    clients: renderClientsAccountingReport,
+    products: renderProductsAccountingReport,
+    payments: renderPaymentsReport,
+    bank: () => renderPaymentGroupReport("bank"),
+    cash: () => renderPaymentGroupReport("cash"),
+    mobile: () => renderPaymentGroupReport("mobile"),
+    refunds: renderRefundsReport,
+    monthly: renderMonthlyReport,
+    yearly: renderYearlyReport
+  };
+
+  target.innerHTML = (reports[dashboardReport] || renderAccountingOverview)();
+}
+
 function renderMonthlyReport() {
   const map = {};
 
