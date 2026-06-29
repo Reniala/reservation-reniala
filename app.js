@@ -1258,13 +1258,14 @@ function documentHtml(order, type) {
       ${RESERVE.salesTerms.map(term => `<li>${term}</li>`).join("")}
     </ul>
     <p class="muted">${cancellationText(order.serviceDate)}</p>
-    <p class="doc-thanks">Nous vous remercions de votre confiance !</p>
-    <div class="doc-footer">
-      <span>+(261) 034 03 790 40</span>
-      <a href="mailto:info@reniala-madagascar.com">info@reniala-madagascar.com</a>
-      <a href="https://reniala-ecotourisme.jimdofree.com/">https://reniala-ecotourisme.jimdofree.com/</a>
-    </div>
-  </div>`;
+    <div class="doc-bottom">
+  <p class="doc-thanks">Nous vous remercions de votre confiance !</p>
+  <div class="doc-footer">
+    <span>+(261) 034 03 790 40</span>
+    <a href="mailto:info@reniala-madagascar.com">info@reniala-madagascar.com</a>
+    <a href="https://reniala-ecotourisme.jimdofree.com/">https://reniala-ecotourisme.jimdofree.com/</a>
+  </div>
+</div>`;
 }
 
 function responseTemplate(type, number) {
