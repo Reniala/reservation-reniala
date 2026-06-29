@@ -590,7 +590,20 @@ function renderMonthlyReport() {
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([month, v]) => [month, v.orders.length, fmtMoney(v.total), fmtMoney(v.paid), fmtMoney(v.balance)]);
 
-  return `<div class="card">${table(["Mois", "Commandes", "CA", "Paye", "Reste"], rows)}</div>`;
+  return `
+    <div class="card card-pad">
+      <h3>Résumé mensuel</h3>
+      ${table(["Mois", "Commandes", "CA", "Paye", "Reste"], rows)}
+    </div>
+
+    <div class="card card-pad" style="margin-top:16px">
+      <div class="row space">
+        <h3>Factures par client - mensuel</h3>
+        <button class="small secondary" onclick="copyAccountingCsv('month')">Copier CSV</button>
+      </div>
+      ${clientInvoiceTable("month")}
+    </div>
+  `;
 }
 
 function renderYearlyReport() {
@@ -609,9 +622,71 @@ function renderYearlyReport() {
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([year, v]) => [year, v.orders.length, fmtMoney(v.total), fmtMoney(v.paid), fmtMoney(v.balance)]);
 
-  return `<div class="card">${table(["Annee", "Commandes", "CA", "Paye", "Reste"], rows)}</div>`;
+  return `
+    <div class="card card-pad">
+      <h3>Résumé annuel</h3>
+      ${table(["Annee", "Commandes", "CA", "Paye", "Reste"], rows)}
+    </div>
+
+    <div class="card card-pad" style="margin-top:16px">
+      <div class="row space">
+        <h3>Factures par client - annuel</h3>
+        <button class="small secondary" onclick="copyAccountingCsv('year')">Copier CSV</button>
+      </div>
+      ${clientInvoiceTable("year")}
+    </div>
+  `;
 }
 
+function clientInvoiceRows(period = "month") {
+  return state.orders
+    .slice()
+    .sort((a, b) => {
+      const clientCompare = clientName(a.clientId).localeCompare(clientName(b.clientId));
+      if (clientCompare !== 0) return clientCompare;
+      return (a.serviceDate || "").localeCompare(b.serviceDate || "");
+    })
+    .map(o => {
+      const invoiceNumber = o.invoiceNumber || documentNumber(o, "facture");
+      const date = o.orderDate || o.serviceDate || today();
+      const periodValue = period === "year" ? date.slice(0, 4) : date.slice(0, 7);
+      const paid = orderBalance(o) <= 0 ? "Payé" : "Non payé";
+
+      return [
+        invoiceNumber,
+        clientName(o.clientId),
+        periodValue,
+        date,
+        fmtMoney(billableTotal(o)),
+        paid,
+        o.status === "Annulee" ? "Annulé" : "Comptabilisé"
+      ];
+    });
+}
+
+function clientInvoiceTable(period = "month") {
+  const rows = clientInvoiceRows(period);
+
+  if (!rows.length) {
+    return empty("Aucune facture trouvee.");
+  }
+
+  return table(
+    ["Numero", "Client", period === "year" ? "Annee" : "Mois", "Date de facturation", "Total signe", "Statut du paiement", "Statut"],
+    rows
+  );
+}
+
+function copyAccountingCsv(period = "month") {
+  const headers = ["Numero", "Client", period === "year" ? "Annee" : "Mois", "Date de facturation", "Total signe", "Statut du paiement", "Statut"];
+  const rows = clientInvoiceRows(period);
+
+  const csv = [headers, ...rows]
+    .map(row => row.map(value => `"${String(value).replace(/"/g, '""')}"`).join(";"))
+    .join("\n");
+
+  copyText(csv);
+}
 function metric(label, value) {
   return `<div class="card card-pad metric"><span>${label}</span><strong>${value}</strong></div>`;
 }
