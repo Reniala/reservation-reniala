@@ -1378,17 +1378,18 @@ function openDocumentModal(order, type = "devis", closable = true) {
       return;
     }
     const orderNumber = order.number || visibleNumber;
-let subject = `Reserve Reniala - ${labelDoc(type)} ${visibleNumber}`;
+let subject = "Reserve Reniala - " + labelDoc(type) + " " + visibleNumber;
 
 if (type === "proforma") {
-  subject = `Facture pro forma - Commande ${orderNumber}`;
+  subject = "Facture pro forma - Commande " + orderNumber;
 }
 
 if (type === "facture") {
-  subject = `Facture ${visibleNumber}`;
+  subject = "Facture " + visibleNumber;
 }
 
-const body = `${responseTemplate(type, visibleNumber, orderNumber)}\n\nNote: le document PDF doit etre joint au mail apres l'avoir enregistre avec le bouton Imprimer / PDF.`;
+const body = responseTemplate(type, visibleNumber, orderNumber)
+  + "\n\nNote: le document PDF doit etre joint au mail apres l'avoir enregistre avec le bouton Imprimer / PDF.";
 
 openMailClient(client.email, subject, body);
   });
@@ -1470,16 +1471,46 @@ function documentHtml(order, type) {
 
 function responseTemplate(type, number, orderNumber = number) {
   if (type === "proforma") {
-    return `Bonjour,
-
-Veuillez trouver ci-joint votre facture pro forma correspondant a votre commande *${orderNumber}*.
-
-Nous restons a votre entiere disposition pour toute demande de modification, precision ou information complementaire.
-
-Nous vous remercions pour votre confiance et esperons avoir le plaisir de vous accueillir prochainement a la Reserve Reniala.
-
-Cordialement,`;
+    return [
+      "Bonjour,",
+      "",
+      "Veuillez trouver ci-joint votre facture pro forma correspondant a votre commande " + orderNumber + ".",
+      "",
+      "Nous restons a votre entiere disposition pour toute demande de modification, precision ou information complementaire.",
+      "",
+      "Nous vous remercions pour votre confiance et esperons avoir le plaisir de vous accueillir prochainement a la Reserve Reniala.",
+      "",
+      "Cordialement,"
+    ].join("\n");
   }
+
+  if (type === "facture") {
+    return [
+      "Bonjour,",
+      "",
+      "Veuillez trouver ci-joint votre facture numero " + number + ", correspondant a votre reservation.",
+      "",
+      "Nous restons a votre entiere disposition pour toute question ou demande d'information complementaire.",
+      "",
+      "Nous vous remercions pour votre confiance et esperons avoir le plaisir de vous accueillir prochainement a la Reserve Reniala.",
+      "",
+      "Cordialement,"
+    ].join("\n");
+  }
+
+  const label = labelDoc(type).toLowerCase();
+
+  return [
+    "Bonjour,",
+    "",
+    "Veuillez trouver ci-joint votre " + label + " correspondant a la commande " + number + ".",
+    "",
+    "Nous restons a votre disposition pour toute modification ou information complementaire.",
+    "",
+    "Cordialement,",
+    "Reserve Reniala"
+  ].join("\n");
+}
 
   if (type === "facture") {
     return `Bonjour,
