@@ -1165,3 +1165,47 @@ th { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spa
     grid-template-columns: 1fr;
   }
 }
+
+.document-preview {
+  min-height: 277mm;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+.doc-bottom {
+  margin-top: auto;
+  padding-top: 18px;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.doc-thanks {
+  text-align: center;
+  font-weight: 800;
+  color: var(--accent);
+  font-size: 20px;
+  margin: 0 0 12px;
+}
+
+.doc-footer {
+  margin-top: 0;
+}
+
+@media print {
+  @page {
+    size: A4;
+    margin: 10mm;
+  }
+
+  .document-preview {
+    min-height: 277mm;
+    display: flex;
+    flex-direction: column;
+    box-shadow: none;
+  }
+
+  .doc-bottom {
+    margin-top: auto;
+  }
+}
