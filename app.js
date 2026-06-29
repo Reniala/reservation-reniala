@@ -1377,9 +1377,14 @@ function openDocumentModal(order, type = "devis", closable = true) {
       alert("Ce client n'a pas d'adresse mail renseignee.");
       return;
     }
-    const subject = `Reserve Reniala - ${labelDoc(type)} ${visibleNumber}`;
-    const body = `${responseTemplate(type, visibleNumber)}\n\nNote: le document PDF doit etre joint au mail apres l'avoir enregistre avec le bouton Imprimer / PDF.`;
-    openMailClient(client.email, subject, body);
+    const orderNumber = order.number || visibleNumber;
+    const subject = type === "proforma"
+      ? `Facture pro forma - Commande ${orderNumber}`
+      : `Reserve Reniala - ${labelDoc(type)} ${visibleNumber}`;
+
+const body = `${responseTemplate(type, visibleNumber, orderNumber)}\n\nNote: le document PDF doit etre joint au mail apres l'avoir enregistre avec le bouton Imprimer / PDF.`;
+
+openMailClient(client.email, subject, body);
   });
 }
 
@@ -1457,9 +1462,29 @@ function documentHtml(order, type) {
 </div>`;
 }
 
-function responseTemplate(type, number) {
+function responseTemplate(type, number, orderNumber = number) {
+  if (type === "proforma") {
+    return `Bonjour,
+
+Veuillez trouver ci-joint votre facture pro forma correspondant a votre commande *${orderNumber}*.
+
+Nous restons a votre entiere disposition pour toute demande de modification, precision ou information complementaire.
+
+Nous vous remercions pour votre confiance et esperons avoir le plaisir de vous accueillir prochainement a la Reserve Reniala.
+
+Cordialement,`;
+  }
+
   const label = labelDoc(type).toLowerCase();
-  return `Bonjour,\n\nVeuillez trouver ci-joint votre ${label} correspondant a la commande ${number}.\n\nNous restons a votre disposition pour toute modification ou information complementaire.\n\nCordialement,\nReserve Reniala`;
+
+  return `Bonjour,
+
+Veuillez trouver ci-joint votre ${label} correspondant a la commande ${number}.
+
+Nous restons a votre disposition pour toute modification ou information complementaire.
+
+Cordialement,
+Reserve Reniala`;
 }
 
 function internalNotesTemplate() {
