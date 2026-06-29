@@ -1378,11 +1378,15 @@ function openDocumentModal(order, type = "devis", closable = true) {
       return;
     }
     const orderNumber = order.number || visibleNumber;
-    const subject = type === "proforma"
-      ? `Facture pro forma - Commande ${orderNumber}`
-      : type === "facture"
-        ? `Facture ${visibleNumber}`
-        : `Reserve Reniala - ${labelDoc(type)} ${visibleNumber}`;`;
+let subject = `Reserve Reniala - ${labelDoc(type)} ${visibleNumber}`;
+
+if (type === "proforma") {
+  subject = `Facture pro forma - Commande ${orderNumber}`;
+}
+
+if (type === "facture") {
+  subject = `Facture ${visibleNumber}`;
+}
 
 const body = `${responseTemplate(type, visibleNumber, orderNumber)}\n\nNote: le document PDF doit etre joint au mail apres l'avoir enregistre avec le bouton Imprimer / PDF.`;
 
