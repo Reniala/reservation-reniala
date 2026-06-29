@@ -1380,7 +1380,9 @@ function openDocumentModal(order, type = "devis", closable = true) {
     const orderNumber = order.number || visibleNumber;
     const subject = type === "proforma"
       ? `Facture pro forma - Commande ${orderNumber}`
-      : `Reserve Reniala - ${labelDoc(type)} ${visibleNumber}`;
+      : type === "facture"
+        ? `Facture ${visibleNumber}`
+        : `Reserve Reniala - ${labelDoc(type)} ${visibleNumber}`;`;
 
 const body = `${responseTemplate(type, visibleNumber, orderNumber)}\n\nNote: le document PDF doit etre joint au mail apres l'avoir enregistre avec le bouton Imprimer / PDF.`;
 
@@ -1475,6 +1477,18 @@ Nous vous remercions pour votre confiance et esperons avoir le plaisir de vous a
 Cordialement,`;
   }
 
+  if (type === "facture") {
+    return `Bonjour,
+
+Veuillez trouver ci-joint votre facture *n° ${number}*, correspondant a votre reservation.
+
+Nous restons a votre entiere disposition pour toute question ou demande d'information complementaire.
+
+Nous vous remercions pour votre confiance et esperons avoir le plaisir de vous accueillir prochainement a la Reserve Reniala.
+
+Cordialement,`;
+  }
+
   const label = labelDoc(type).toLowerCase();
 
   return `Bonjour,
@@ -1486,7 +1500,6 @@ Nous restons a votre disposition pour toute modification ou information compleme
 Cordialement,
 Reserve Reniala`;
 }
-
 function internalNotesTemplate() {
   return `Resa faite par : Niry
 Client(s) : 6 pax + 1 guide
