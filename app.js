@@ -87,6 +87,7 @@ let currentView = "dashboard";
 let calendarYear = new Date().getFullYear();
 let calendarMonth = new Date().getMonth();
 let dashboardReport = "overview";
+let accountingClientFilter = "all";
 document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("loginForm").addEventListener("submit", login);
   document.getElementById("logoutBtn").addEventListener("click", logout);
@@ -346,25 +347,38 @@ function renderDashboard() {
   renderDashboardReport();
 }
 
-function renderDashboardReport() {
-  const target = byId("dashboardReport");
-  const reports = {
-    overview: renderAccountingOverview,
-    sales: renderSalesReport,
-    clients: renderClientsAccountingReport,
-    products: renderProductsAccountingReport,
-    payments: renderPaymentsReport,
-    bank: () => renderPaymentGroupReport("bank"),
-    cash: () => renderPaymentGroupReport("cash"),
-    mobile: () => renderPaymentGroupReport("mobile"),
-    refunds: renderRefundsReport,
-    monthly: renderMonthlyReport,
-    yearly: renderYearlyReport
-  };
+function renderMonthlyReport() {
+  const map = {};
 
-  target.innerHTML = (reports[dashboardReport] || renderAccountingOverview)();
+  state.orders.forEach(o => {
+    const key = (o.serviceDate || o.orderDate || today()).slice(0, 7);
+    map[key] = map[key] || { orders: [], total: 0, paid: 0, balance: 0 };
+    map[key].orders.push(o);
+    map[key].total += billableTotal(o);
+    map[key].paid += orderPaid(o);
+    map[key].balance += orderBalance(o);
+  });
+
+  const rows = Object.entries(map)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([month, v]) => [month, v.orders.length, fmtMoney(v.total), fmtMoney(v.paid), fmtMoney(v.balance)]);
+
+  return `
+    <div class="card card-pad">
+      <h3>Résumé mensuel</h3>
+      ${table(["Mois", "Commandes", "CA", "Paye", "Reste"], rows)}
+    </div>
+
+    <div class="card card-pad" style="margin-top:16px">
+      <div class="row space">
+        <h3>Factures par client - mensuel</h3>
+        <button class="small secondary" onclick="copyAccountingCsv('month')">Copier CSV</button>
+      </div>
+      ${accountingClientSelector()}
+      ${clientInvoiceTable("month")}
+    </div>
+  `;
 }
-
 function accountingTotals(orders = state.orders) {
   const validOrders = orders.filter(o => o.status !== "Annulee");
   const cancelledOrders = orders.filter(o => o.status === "Annulee");
@@ -633,13 +647,43 @@ function renderYearlyReport() {
         <h3>Factures par client - annuel</h3>
         <button class="small secondary" onclick="copyAccountingCsv('year')">Copier CSV</button>
       </div>
+      ${accountingClientSelector()}
       ${clientInvoiceTable("year")}
     </div>
   `;
 }
 
+function accountingClientSelector() {
+  const options = [
+    `<option value="all"${accountingClientFilter === "all" ? " selected" : ""}>Tous les clients</option>`,
+    ...state.clients.map(client =>
+      `<option value="${client.id}"${accountingClientFilter === client.id ? " selected" : ""}>${client.name}</option>`
+    )
+  ].join("");
+
+  setTimeout(() => {
+    const select = byId("accountingClientFilter");
+    if (!select) return;
+
+    select.addEventListener("change", event => {
+      accountingClientFilter = event.target.value;
+      renderDashboardReport();
+    });
+  }, 0);
+
+  return `
+    <label style="display:block;margin:12px 0;max-width:360px">
+      Client
+      <select id="accountingClientFilter">
+        ${options}
+      </select>
+    </label>
+  `;
+}
+
 function clientInvoiceRows(period = "month") {
   return state.orders
+    .filter(o => accountingClientFilter === "all" || o.clientId === accountingClientFilter)
     .slice()
     .sort((a, b) => {
       const clientCompare = clientName(a.clientId).localeCompare(clientName(b.clientId));
