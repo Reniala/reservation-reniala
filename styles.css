@@ -1167,7 +1167,7 @@ th { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spa
 }
 
 .document-preview {
-  min-height: 297mm !important;
+  min-height: 1120px !important;
   display: flex !important;
   flex-direction: column !important;
   box-sizing: border-box !important;
@@ -1175,7 +1175,7 @@ th { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spa
 
 .doc-bottom {
   margin-top: auto !important;
-  padding-top: 18px;
+  padding-top: 24px !important;
   break-inside: avoid;
   page-break-inside: avoid;
 }
