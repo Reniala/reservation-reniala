@@ -1512,29 +1512,6 @@ function responseTemplate(type, number, orderNumber = number) {
   ].join("\n");
 }
 
-  if (type === "facture") {
-    return `Bonjour,
-
-Veuillez trouver ci-joint votre facture *n° ${number}*, correspondant a votre reservation.
-
-Nous restons a votre entiere disposition pour toute question ou demande d'information complementaire.
-
-Nous vous remercions pour votre confiance et esperons avoir le plaisir de vous accueillir prochainement a la Reserve Reniala.
-
-Cordialement,`;
-  }
-
-  const label = labelDoc(type).toLowerCase();
-
-  return `Bonjour,
-
-Veuillez trouver ci-joint votre ${label} correspondant a la commande ${number}.
-
-Nous restons a votre disposition pour toute modification ou information complementaire.
-
-Cordialement,
-Reserve Reniala`;
-}
 function internalNotesTemplate() {
   return `Resa faite par : Niry
 Client(s) : 6 pax + 1 guide
