@@ -1182,7 +1182,17 @@ function openDocumentModal(order, type = "devis", closable = true) {
   const client = state.clients.find(c => c.id === order.clientId) || {};
   const visibleNumber = documentNumber(order, type);
   modal(`<div class="row space modal-actions"><h3>${labelDoc(type)} ${visibleNumber}</h3><div class="row"><button id="printBtn">Imprimer / PDF</button><button id="sendDocBtn" class="secondary">Envoyer par mail</button><button class="secondary" data-close>Fermer</button></div></div>${doc}`);
-  byId("printBtn").addEventListener("click", () => window.print());
+  byId("printBtn").addEventListener("click", () => {
+  const oldTitle = document.title;
+  const fileName = `${labelDoc(type)} ${visibleNumber}`.replace(/[\/\\:*?"<>|]/g, "-");
+
+  document.title = fileName;
+  window.print();
+
+  setTimeout(() => {
+    document.title = oldTitle;
+  }, 1000);
+});
   byId("sendDocBtn").addEventListener("click", () => {
     if (!client.email) {
       alert("Ce client n'a pas d'adresse mail renseignee.");
