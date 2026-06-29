@@ -706,17 +706,18 @@ function accountingClientSelector() {
 function clientInvoiceRows(period = "month") {
   return state.orders
     .filter(o => accountingClientFilter === "all" || o.clientId === accountingClientFilter)
+    .filter(o => o.status !== "Annulee")
     .slice()
     .sort((a, b) => {
       const clientCompare = clientName(a.clientId).localeCompare(clientName(b.clientId));
       if (clientCompare !== 0) return clientCompare;
-      return (a.serviceDate || "").localeCompare(b.serviceDate || "");
+      return (a.serviceDate || a.orderDate || "").localeCompare(b.serviceDate || b.orderDate || "");
     })
     .map(o => {
-      const invoiceNumber = o.invoiceNumber || o.number || o.quoteNumber || o.id;
+      const invoiceNumber = documentNumber(o, "facture");
       const date = o.orderDate || o.serviceDate || today();
       const periodValue = period === "year" ? date.slice(0, 4) : date.slice(0, 7);
-      const paid = orderBalance(o) <= 0 ? "Payé" : "Non payé";
+      const paid = orderBalance(o) <= 0 ? "Paye" : "Non paye";
 
       return [
         invoiceNumber,
@@ -725,11 +726,10 @@ function clientInvoiceRows(period = "month") {
         date,
         fmtMoney(billableTotal(o)),
         paid,
-        o.status === "Annulee" ? "Annulé" : "Comptabilisé"
+        "Comptabilise"
       ];
     });
 }
-
 function clientInvoiceTable(period = "month") {
   const rows = clientInvoiceRows(period);
 
