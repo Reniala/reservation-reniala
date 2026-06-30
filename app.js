@@ -1737,7 +1737,7 @@ function input(name, labelText, value = "", required = false, type = "text") {
   return `<label>${labelText}<input name="${name}" type="${type}" value="${String(value || "").replaceAll('"', "&quot;")}" ${required ? "required" : ""}></label>`;
 }
 function openMailClient(to, subject, body) {
-  const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(to)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  const gmailUrl = `https://mail.google.com/mail/u/reservation.reniala@gmail.com/?view=cm&fs=1&to=${encodeURIComponent(to)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   const opened = window.open(gmailUrl, "_blank", "noopener,noreferrer");
   if (!opened) {
     window.location.href = gmailUrl;
