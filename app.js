@@ -1211,7 +1211,12 @@ Nous avons bien recu votre demande et vous remercions pour votre message.
 Nous revenons vers vous avec les informations concernant votre reservation.
 
 Cordialement,
-Lucile`;
+
+Lucile
+Service réservation - information
+Reniala Mangily Tuléar
+Conservation and Developement
+W: http://reniala-ecotourisme.jimdo.com/`;
 
   modal(`<h3>Repondre au client</h3>
     <form id="replyForm" class="form-grid">
@@ -1701,8 +1706,14 @@ function responseTemplate(type, number, orderNumber = number) {
       "",
       "Nous vous remercions pour votre confiance et esperons avoir le plaisir de vous accueillir prochainement a la Reserve Reniala.",
       "",
-      "Cordialement,"
-    ].join("\n");
+      "Cordialement,",
+"",
+"Lucile",
+"Service réservation - information",
+"Reniala Mangily Tuléar",
+"Conservation and Developement",
+"W: http://reniala-ecotourisme.jimdo.com/"
+].join("\n");
   }
 
   if (type === "facture") {
@@ -1715,8 +1726,14 @@ function responseTemplate(type, number, orderNumber = number) {
       "",
       "Nous vous remercions pour votre confiance et esperons avoir le plaisir de vous accueillir prochainement a la Reserve Reniala.",
       "",
-      "Cordialement,"
-    ].join("\n");
+      "Cordialement,",
+"",
+"Lucile",
+"Service réservation - information",
+"Reniala Mangily Tuléar",
+"Conservation and Developement",
+"W: http://reniala-ecotourisme.jimdo.com/"
+].join("\n");
   }
 
   const label = labelDoc(type).toLowerCase();
@@ -1729,8 +1746,13 @@ function responseTemplate(type, number, orderNumber = number) {
     "Nous restons a votre disposition pour toute modification ou information complementaire.",
     "",
     "Cordialement,",
-    "Reserve Reniala"
-  ].join("\n");
+"",
+"Lucile",
+"Service réservation - information",
+"Reniala Mangily Tuléar",
+"Conservation and Developement",
+"W: http://reniala-ecotourisme.jimdo.com/"
+].join("\n");
 }
 
 function internalNotesTemplate() {
