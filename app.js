@@ -841,6 +841,7 @@ function mailCard(mail) {
       <button class="small secondary" data-mail-action="reply" data-id="${mail.id}">Repondre</button>
       <button class="small warning" data-mail-action="waiting" data-id="${mail.id}">En attente</button>
       <button class="small" data-mail-action="paid" data-id="${mail.id}">Regle</button>
+      <button class="small warning" data-mail-action="delete" data-id="${mail.id}">Supprimer</button>
     </div>
   </article>`;
 }
@@ -848,6 +849,13 @@ function mailCard(mail) {
 function handleMailAction(event) {
   const mail = state.mails.find(m => m.id === event.currentTarget.dataset.id);
   const action = event.currentTarget.dataset.mailAction;
+  if (action === "delete") {
+  if (!confirm("Supprimer ce mail du pipeline ?")) return;
+  state.mails = state.mails.filter(m => m.id !== mail.id);
+  saveState();
+  render();
+  return;
+}
   if (action === "quote" || action === "proforma") return openOrderModal({ mail, docType: action === "quote" ? "devis" : "proforma" });
   if (action === "reply") return openReplyModal(mail);
   mail.status = action === "paid" ? "regle" : "en attente";
