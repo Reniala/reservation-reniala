@@ -849,7 +849,7 @@ function handleMailAction(event) {
   const mail = state.mails.find(m => m.id === event.currentTarget.dataset.id);
   const action = event.currentTarget.dataset.mailAction;
   if (action === "quote" || action === "proforma") return openOrderModal({ mail, docType: action === "quote" ? "devis" : "proforma" });
-  if (action === "reply") return openReplyModal(mail, "devis", null);
+  if (action === "reply") return openReplyModal(mail);
   mail.status = action === "paid" ? "regle" : "en attente";
   saveState();
   render();
@@ -1153,6 +1153,63 @@ function openMailModal(mail = {}) {
     saveState();
     closeModal();
     render();
+  });
+}
+
+function cleanEmailAddress(value = "") {
+  const match = String(value).match(/<([^>]+)>/);
+  return match ? match[1].trim() : String(value).trim();
+}
+
+function openReplyModal(mail) {
+  const to = cleanEmailAddress(mail.from);
+  const subject = mail.subject && mail.subject.toLowerCase().startsWith("re:")
+    ? mail.subject
+    : `Re: ${mail.subject || "Demande de reservation"}`;
+
+  const body = `Bonjour,
+
+Nous avons bien recu votre demande et vous remercions pour votre message.
+
+Nous revenons vers vous avec les informations concernant votre reservation.
+
+Cordialement,
+Lucile`;
+
+  modal(`<h3>Repondre au client</h3>
+    <form id="replyForm" class="form-grid">
+      <label class="wide">Destinataire<input name="to" type="email" value="${to}" required></label>
+      <label class="wide">Objet<input name="subject" value="${subject}" required></label>
+      <label class="wide">Message<textarea name="body" rows="10" required>${body}</textarea></label>
+      <div class="row wide">
+        <button>Envoyer</button>
+        <button type="button" class="secondary" data-close>Fermer</button>
+      </div>
+    </form>`);
+
+  byId("replyForm").addEventListener("submit", async event => {
+    event.preventDefault();
+
+    const data = Object.fromEntries(new FormData(event.target));
+    const url = `${API_URL}?action=sendReply&to=${encodeURIComponent(data.to)}&subject=${encodeURIComponent(data.subject)}&body=${encodeURIComponent(data.body)}`;
+
+    try {
+      const result = await fetchJsonp(url);
+
+      if (!result.success) {
+        alert(result.error || "Envoi impossible.");
+        return;
+      }
+
+      mail.status = "traite";
+      saveState();
+      await syncFromCloud();
+      closeModal();
+      render();
+      alert("Reponse envoyee depuis info@reniala-madagascar.com.");
+    } catch (error) {
+      alert("Impossible d'envoyer la reponse.");
+    }
   });
 }
 
