@@ -872,7 +872,8 @@ function renderClients() {
     </div>
     <div class="card">${table(["Nom","Mail","Telephone","RC","NIF","Stat",""], state.clients.map(c => [
       c.name, c.email, c.phone, c.rc || "-", c.nif || "-", c.stat || "-",
-      `<button class="small secondary" data-client="${c.id}">Modifier</button>`
+      `<button class="small secondary" data-client="${c.id}">Modifier</button>
+       <button class="small warning" data-delete-client="${c.id}">Supprimer</button>`
     ]))}</div>`;
 
   byId("newClientBtn").addEventListener("click", () => openClientModal());
@@ -882,6 +883,24 @@ function renderClients() {
   document.querySelectorAll("[data-client]").forEach(btn =>
     btn.addEventListener("click", () => openClientModal(state.clients.find(c => c.id === btn.dataset.client)))
   );
+  document.querySelectorAll("[data-delete-client]").forEach(btn =>
+  btn.addEventListener("click", () => {
+    const client = state.clients.find(c => c.id === btn.dataset.deleteClient);
+    if (!client) return;
+
+    const used = state.orders.some(order => order.clientId === client.id);
+    if (used) {
+      alert("Ce client est utilise dans une commande. Impossible de le supprimer.");
+      return;
+    }
+
+    if (!confirm(`Supprimer le client ${client.name} ?`)) return;
+
+    state.clients = state.clients.filter(c => c.id !== client.id);
+    saveState();
+    render();
+  })
+);
 }
 
 function renderProducts() {
