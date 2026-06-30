@@ -800,6 +800,7 @@ function renderPipeline() {
     <div class="toolbar">
       <div class="filters">
         <button id="newMailBtn">Ajouter un mail recu</button>
+        <button id="syncMailsBtn" class="secondary">Synchroniser les mails</button>
       </div>
       <button class="secondary" id="resetDemoBtn">Reinitialiser demo</button>
     </div>
@@ -812,6 +813,16 @@ function renderPipeline() {
       </div>
     </div>`;
   byId("newMailBtn").addEventListener("click", () => openMailModal());
+  byId("syncMailsBtn").addEventListener("click", async () => {
+  try {
+    const result = await fetchJsonp(`${API_URL}?action=syncMails`);
+    alert(`${result.imported || 0} mail(s) importe(s).`);
+    await syncFromCloud();
+    render();
+  } catch (error) {
+    alert("Impossible de synchroniser les mails.");
+  }
+});
   byId("resetDemoBtn").addEventListener("click", () => { if (confirm("Remettre les donnees de demonstration ?")) { state = structuredClone(seed); saveState(); render(); } });
   document.querySelectorAll("[data-mail-action]").forEach(btn => btn.addEventListener("click", handleMailAction));
 }
