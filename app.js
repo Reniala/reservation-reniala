@@ -865,13 +865,23 @@ function handleMailAction(event) {
 
 function renderClients() {
   byId("clients").innerHTML = `
-    <div class="toolbar"><button id="newClientBtn">Nouveau client</button></div>
+    <div class="toolbar">
+      <button id="newClientBtn">Nouveau client</button>
+      <button id="importClientsBtn" class="secondary">Importer CSV</button>
+      <input id="clientsCsvInput" type="file" accept=".csv" class="hidden">
+    </div>
     <div class="card">${table(["Nom","Mail","Telephone","RC","NIF","Stat",""], state.clients.map(c => [
       c.name, c.email, c.phone, c.rc || "-", c.nif || "-", c.stat || "-",
       `<button class="small secondary" data-client="${c.id}">Modifier</button>`
     ]))}</div>`;
+
   byId("newClientBtn").addEventListener("click", () => openClientModal());
-  document.querySelectorAll("[data-client]").forEach(btn => btn.addEventListener("click", () => openClientModal(state.clients.find(c => c.id === btn.dataset.client))));
+  byId("importClientsBtn").addEventListener("click", () => byId("clientsCsvInput").click());
+  byId("clientsCsvInput").addEventListener("change", importClientsCsv);
+
+  document.querySelectorAll("[data-client]").forEach(btn =>
+    btn.addEventListener("click", () => openClientModal(state.clients.find(c => c.id === btn.dataset.client)))
+  );
 }
 
 function renderProducts() {
@@ -1244,6 +1254,106 @@ function openClientModal(client = {}) {
   });
 }
 
+function importClientsCsv(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+
+  reader.onload = () => {
+    const rows = parseCsv(reader.result);
+    if (rows.length < 2) {
+      alert("Fichier CSV vide.");
+      return;
+    }
+
+    const headers = rows[0].map(normalizeCsvHeader);
+    const imported = [];
+
+    rows.slice(1).forEach(row => {
+      const get = name => row[headers.indexOf(name)] || "";
+      const fiscal = get("coordonnees fiscales");
+
+      const client = {
+        id: uid(),
+        name: get("client").trim(),
+        representative: get("representant").trim(),
+        phone: get("telephone").trim(),
+        address: get("adresse").trim(),
+        email: get("mail").trim(),
+        rc: extractFiscal(fiscal, "rc"),
+        nif: extractFiscal(fiscal, "nif"),
+        stat: extractFiscal(fiscal, "stat")
+      };
+
+      if (!client.name) return;
+
+      const exists = state.clients.some(c =>
+        (client.email && c.email === client.email) ||
+        c.name.toLowerCase() === client.name.toLowerCase()
+      );
+
+      if (!exists) imported.push(client);
+    });
+
+    state.clients.push(...imported);
+    saveState();
+    render();
+
+    alert(`${imported.length} client(s) importe(s).`);
+    event.target.value = "";
+  };
+
+  reader.readAsText(file, "UTF-8");
+}
+
+function parseCsv(text) {
+  const separator = text.includes(";") ? ";" : ",";
+  return text
+    .replace(/\r/g, "")
+    .split("\n")
+    .filter(line => line.trim())
+    .map(line => parseCsvLine(line, separator));
+}
+
+function parseCsvLine(line, separator) {
+  const result = [];
+  let value = "";
+  let quoted = false;
+
+  for (let i = 0; i < line.length; i++) {
+    const char = line[i];
+
+    if (char === '"' && line[i + 1] === '"') {
+      value += '"';
+      i++;
+    } else if (char === '"') {
+      quoted = !quoted;
+    } else if (char === separator && !quoted) {
+      result.push(value.trim());
+      value = "";
+    } else {
+      value += char;
+    }
+  }
+
+  result.push(value.trim());
+  return result;
+}
+
+function normalizeCsvHeader(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
+function extractFiscal(text, key) {
+  const regex = new RegExp(`${key}\\s*[:\\-]?\\s*([^;\\n]+)`, "i");
+  const match = String(text || "").match(regex);
+  return match ? match[1].trim() : "";
+}
 function openProductModal(p = {}) {
   modal(`<h3>${p.id ? "Modifier" : "Nouvelle"} prestation</h3>
     <form id="productForm" class="form-grid">
