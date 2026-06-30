@@ -1328,37 +1328,48 @@ function importClientsCsv(event) {
 
 function parseCsv(text) {
   const separator = text.includes(";") ? ";" : ",";
-  return text
-    .replace(/\r/g, "")
-    .split("\n")
-    .filter(line => line.trim())
-    .map(line => parseCsvLine(line, separator));
-}
-
-function parseCsvLine(line, separator) {
-  const result = [];
+  const rows = [];
+  let row = [];
   let value = "";
   let quoted = false;
 
-  for (let i = 0; i < line.length; i++) {
-    const char = line[i];
+  text = text.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
 
-    if (char === '"' && line[i + 1] === '"') {
+  for (let i = 0; i < text.length; i++) {
+    const char = text[i];
+    const next = text[i + 1];
+
+    if (char === '"' && next === '"') {
       value += '"';
       i++;
     } else if (char === '"') {
       quoted = !quoted;
     } else if (char === separator && !quoted) {
-      result.push(value.trim());
+      row.push(cleanCsvValue(value));
+      value = "";
+    } else if (char === "\n" && !quoted) {
+      row.push(cleanCsvValue(value));
+      if (row.some(cell => cell.trim())) rows.push(row);
+      row = [];
       value = "";
     } else {
       value += char;
     }
   }
 
-  result.push(value.trim());
-  return result;
+  row.push(cleanCsvValue(value));
+  if (row.some(cell => cell.trim())) rows.push(row);
+
+  return rows;
 }
+
+function cleanCsvValue(value) {
+  return String(value || "")
+    .replace(/\n+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 
 function normalizeCsvHeader(value) {
   return String(value || "")
