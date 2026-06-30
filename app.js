@@ -1335,7 +1335,12 @@ function openOrderModal({ mail = null, order = null, docType = "devis" }) {
     field.focus();
   });
   byId("addLineBtn").addEventListener("click", () => { items.push({ productId: state.products[0]?.id, qty: 1, price: state.products[0]?.price || 0, date: byId("orderForm").elements.serviceDate.value || today(), startTime: "08:00", endTime: "10:00" }); renderLines(); });
-  byId("orderForm").elements.serviceDate.addEventListener("change", renderLines);
+  byId("orderForm").elements.serviceDate.addEventListener("change", event => {
+  items.forEach(item => {
+    item.date = event.target.value;
+  });
+  renderLines();
+});
   byId("previewDocBtn").addEventListener("click", () => openDocumentModal(readOrderForm(o, items), docType, false));
   byId("orderForm").addEventListener("submit", e => {
     e.preventDefault();
