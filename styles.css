@@ -1263,8 +1263,8 @@ body .document-preview .doc-footer {
 }
 
 .invoice-stamp {
-  width: 120px;
-  max-width: 120px;
+  width: 72px;
+  max-width: 72px;
   height: auto;
   display: inline-block;
 }
