@@ -1780,18 +1780,19 @@ function documentHtml(order, type) {
     ${order.status === "Annulee" ? `<p style="text-align:right"><strong>Montant initial:</strong> ${fmtMoney(orderTotal(order))}<br><strong>Taux applique:</strong> ${Math.round(cancellationRate(order) * 100)}%</p>` : ""}
     <div class="doc-lower-grid">
       <div>${specialInfoHtml(order.specialInfo)}</div>
-      <div class="doc-total-panel">
-        <div><span>Montant hors taxes</span><strong>${fmtMoney(totalAmount)}</strong></div>
-        <div class="total"><span>${totalLabel}</span><strong>${fmtMoney(totalAmount)}</strong></div>
-        <div><span>Acompte / paiements recus</span><strong>${fmtMoney(orderPaid(order))}</strong></div>
-        ${orderCredit(order) ? `<div><span>Avoir client</span><strong>${fmtMoney(orderCredit(order))}</strong></div>` : ""}
-        <div><span>Montant du</span><strong>${fmtMoney(orderBalance(order))}</strong></div>
-${["facture", "annulation"].includes(type) ? ` 
-  <div class="stamp-row">
-    <img class="invoice-stamp" src="assets/tampon-reniala.png" alt="Tampon Reserve Reniala">
+     <div class="doc-total-panel">
+  <div><span>Montant hors taxes</span><strong>${fmtMoney(totalAmount)}</strong></div>
+  <div class="total"><span>${totalLabel}</span><strong>${fmtMoney(totalAmount)}</strong></div>
+  <div><span>Acompte / paiements recus</span><strong>${fmtMoney(orderPaid(order))}</strong></div>
+  ${orderCredit(order) ? `<div><span>Avoir client</span><strong>${fmtMoney(orderCredit(order))}</strong></div>` : ""}
+  <div class="amount-due-row">
+    <span>Montant du</span>
+    ${["facture", "annulation"].includes(type) ? `
+      <img class="invoice-stamp" src="assets/tampon-reniala.png" alt="Tampon Reserve Reniala">
+    ` : ""}
+    <strong>${fmtMoney(orderBalance(order))}</strong>
   </div>
-` : ""}
-      </div>
+</div>
     </div>
     <div class="notice">${noticeText}</div>
     <h3>Conditions generales de vente</h3>
