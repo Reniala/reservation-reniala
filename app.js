@@ -857,9 +857,17 @@ function renderPipeline() {
     })
   );
 }
+function normalizeMailStatus(status) {
+  if (status === "en attente") return "nouveau";
+  if (status === "regle") return "avis_paiement";
+
+  return ["nouveau", "traite", "proposition", "relance", "avis_paiement"].includes(status)
+    ? status
+    : "nouveau";
+}
 
 function mailCard(mail) {
-  const status = mail.status || "nouveau";
+  const status = normalizeMailStatus(mail.status);
 
   return `<article class="mail-kanban-card">
     <strong>${mail.subject || "Sans objet"}</strong>
@@ -899,13 +907,6 @@ function handleMailAction(event) {
     render();
     return;
   }
-}
-
-  if (action === "quote" || action === "proforma") return openOrderModal({ mail, docType: action === "quote" ? "devis" : "proforma" });
-  if (action === "reply") return openReplyModal(mail);
-  mail.status = action === "paid" ? "regle" : "en attente";
-  saveState();
-  render();
 }
 
 function openMailDetailModal(mail) {
