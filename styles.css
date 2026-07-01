@@ -1279,8 +1279,8 @@ body .document-preview .doc-footer {
 }
 
 .invoice-stamp {
-  width: 72px;
-  max-width: 72px;
+  width: 90px;
+  max-width: 90px;
   height: auto;
   display: inline-block;
   background: transparent;
