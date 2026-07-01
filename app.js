@@ -1786,7 +1786,7 @@ function documentHtml(order, type) {
         <div><span>Acompte / paiements recus</span><strong>${fmtMoney(orderPaid(order))}</strong></div>
         ${orderCredit(order) ? `<div><span>Avoir client</span><strong>${fmtMoney(orderCredit(order))}</strong></div>` : ""}
         <div><span>Montant du</span><strong>${fmtMoney(orderBalance(order))}</strong></div>
-${type === "facture" ? `
+${["facture", "annulation"].includes(type) ? ` 
   <div class="stamp-row">
     <img class="invoice-stamp" src="assets/tampon-reniala.png" alt="Tampon Reserve Reniala">
   </div>
