@@ -911,7 +911,16 @@ function handleMailAction(event) {
   }
 }
 
+function mailAttachments(mail) {
+  if (Array.isArray(mail.attachments)) return mail.attachments;
+  if (Array.isArray(mail.piecesJointes)) return mail.piecesJointes;
+  if (Array.isArray(mail.files)) return mail.files;
+  return [];
+}
+
 function openMailDetailModal(mail) {
+  const attachments = mailAttachments(mail);
+
   modal(`<h3>${mail.subject || "Mail recu"}</h3>
     <p class="muted">
       De : ${mail.from || "-"}<br>
@@ -922,20 +931,21 @@ function openMailDetailModal(mail) {
       <p style="white-space:pre-wrap">${mail.body || ""}</p>
     </div>
 
-    ${(mail.attachments || []).length ? `
-      <div class="card card-pad" style="margin-top:12px">
-        <h3>Pieces jointes</h3>
-        ${(mail.attachments || []).map(file => `
+    <div class="card card-pad" style="margin-top:12px">
+      <h3>Pieces jointes</h3>
+      ${attachments.length ? attachments.map(file => {
+        const fileName = file.name || file.nom || "Piece jointe";
+        const fileUrl = file.url || file.link || file.webViewLink || "#";
+
+        return `
           <p>
-            <a href="${file.url}" target="_blank" rel="noopener">
-              ${file.name}
+            <a href="${fileUrl}" target="_blank" rel="noopener">
+              ${fileName}
             </a>
           </p>
-        `).join("")}
-      </div>
-    ` : `
-      <p class="muted" style="margin-top:12px">Aucune piece jointe enregistree pour ce mail.</p>
-    `}
+        `;
+      }).join("") : `<p class="muted">Aucune piece jointe visible pour ce mail.</p>`}
+    </div>
 
     <div class="row" style="margin-top:16px">
       <button id="replyFromDetailBtn" type="button">Repondre</button>
@@ -948,7 +958,6 @@ function openMailDetailModal(mail) {
     openReplyModal(mail, "devis", null);
   });
 }
-
 function renderClients() {
   byId("clients").innerHTML = `
     <div class="toolbar">
