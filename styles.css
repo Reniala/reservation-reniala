@@ -1265,11 +1265,13 @@ body .document-preview .doc-footer {
 .amount-due-row {
   display: grid !important;
   grid-template-columns: 1fr auto 1fr;
-  align-items: center;
+  align-items: start !important;
   gap: 12px;
   background: transparent !important;
   border-bottom: 0 !important;
-  padding: 2px 12px 0 !important;
+  padding: 6px 12px 0 !important;
+  min-height: 72px;
+  overflow: visible !important;
 }
 
 .amount-due-row strong {
@@ -1277,11 +1279,12 @@ body .document-preview .doc-footer {
 }
 
 .invoice-stamp {
-  width: 64px;
-  max-width: 64px;
+  width: 72px;
+  max-width: 72px;
   height: auto;
   display: inline-block;
   background: transparent;
   mix-blend-mode: multiply;
-  transform: translateY(-10px);
+  transform: translateY(18px);
+  image-rendering: auto;
 }
