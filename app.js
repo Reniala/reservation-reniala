@@ -291,7 +291,7 @@ function render() {
   renderers[currentView]();
 }
 
-const titles = {
+var titles = {
   dashboard: "Pilotage reservations",
   pipeline: "Mails, devis et confirmations",
   clients: "Fichier clients",
@@ -302,7 +302,7 @@ const titles = {
   settings: "Parametres"
 };
 
-const renderers = { dashboard: renderDashboard, pipeline: renderPipeline, clients: renderClients, products: renderProducts, orders: renderOrders, billing: renderBilling, calendar: renderCalendar, settings: renderSettings };
+var renderers = { dashboard: renderDashboard, pipeline: renderPipeline, clients: renderClients, products: renderProducts, orders: renderOrders, billing: renderBilling, calendar: renderCalendar, settings: renderSettings };
 
 function renderDashboard() {
   const isAdmin = state.user?.role === "Administrateur principal";
@@ -802,6 +802,71 @@ function normalizeMailStatus(status) {
   return ["nouveau", "traite", "proposition", "relance", "avis_paiement"].includes(status)
     ? status
     : "nouveau";
+}
+
+function renderPipeline() {
+  const columns = [
+    ["nouveau", "Nouveau"],
+    ["traite", "Traite"],
+    ["proposition", "Proposition"],
+    ["relance", "Relance"],
+    ["avis_paiement", "Avis de paiement"]
+  ];
+
+  byId("pipeline").innerHTML = `
+    <div class="toolbar">
+      <div class="filters">
+        <button id="newMailBtn">Ajouter un mail recu</button>
+        <button id="syncMailsBtn" class="secondary">Synchroniser les mails</button>
+      </div>
+    </div>
+
+    <div class="mail-kanban">
+      ${columns.map(([status, label]) => {
+        const mails = state.mails.filter(mail => normalizeMailStatus(mail.status) === status);
+
+        return `
+          <section class="mail-column">
+            <div class="mail-column-head">
+              <h3>${label}</h3>
+              <span>${mails.length}</span>
+            </div>
+            <div class="mail-column-list">
+              ${mails.map(mailCard).join("") || empty("Aucun mail.")}
+            </div>
+          </section>
+        `;
+      }).join("")}
+    </div>
+  `;
+
+  byId("newMailBtn").addEventListener("click", () => openMailModal());
+
+  byId("syncMailsBtn").addEventListener("click", async () => {
+    try {
+      const result = await fetchJsonp(`${API_URL}?action=syncMails`);
+      alert(`${result.imported || 0} mail(s) importe(s).`);
+      await syncFromCloud();
+      render();
+    } catch (error) {
+      alert("Impossible de synchroniser les mails.");
+    }
+  });
+
+  document.querySelectorAll("[data-mail-action]").forEach(btn =>
+    btn.addEventListener("click", handleMailAction)
+  );
+
+  document.querySelectorAll("[data-mail-status]").forEach(select =>
+    select.addEventListener("change", event => {
+      const mail = state.mails.find(m => m.id === event.target.dataset.mailStatus);
+      if (!mail) return;
+
+      mail.status = event.target.value;
+      saveState();
+      render();
+    })
+  );
 }
 
 function mailCard(mail) {
