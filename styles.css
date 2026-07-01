@@ -1206,3 +1206,53 @@ body .document-preview .doc-footer {
     margin-top: auto !important;
   }
 }
+
+.mail-kanban {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(220px, 1fr));
+  gap: 12px;
+  overflow-x: auto;
+}
+
+.mail-column {
+  background: #f8faf5;
+  border: 1px solid #d9e4ce;
+  border-radius: 8px;
+  min-width: 220px;
+}
+
+.mail-column-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  border-bottom: 1px solid #d9e4ce;
+}
+
+.mail-column-head h3 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.mail-column-list {
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+}
+
+.mail-kanban-card {
+  background: white;
+  border: 1px solid #d9e4ce;
+  border-radius: 8px;
+  padding: 10px;
+  display: grid;
+  gap: 8px;
+}
+
+.mail-kanban-card strong {
+  font-size: 14px;
+}
+
+.mail-kanban-card small {
+  color: #5c6b58;
+}
