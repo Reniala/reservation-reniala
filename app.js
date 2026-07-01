@@ -926,16 +926,23 @@ function openMailDetailModal(mail) {
       <div class="card card-pad" style="margin-top:12px">
         <h3>Pieces jointes</h3>
         ${(mail.attachments || []).map(file => `
-          <p><a href="${file.url}" target="_blank" rel="noopener">${file.name}</a></p>
+          <p>
+            <a href="${file.url}" target="_blank" rel="noopener">
+              ${file.name}
+            </a>
+          </p>
         `).join("")}
       </div>
-    ` : ""}
+    ` : `
+      <p class="muted" style="margin-top:12px">Aucune piece jointe enregistree pour ce mail.</p>
+    `}
 
     <div class="row" style="margin-top:16px">
       <button id="replyFromDetailBtn" type="button">Repondre</button>
       <button class="secondary" data-close>Fermer</button>
     </div>
   `);
+
   byId("replyFromDetailBtn").addEventListener("click", () => {
     closeModal();
     openReplyModal(mail, "devis", null);
