@@ -817,7 +817,9 @@ function renderPipeline() {
         <section class="mail-column">
           <div class="mail-column-head">
             <h3>${label}</h3>
-            <span>${state.mails.filter( mail => normalizeMailStatus(mail.status) === status ).length}</span>
+            <span>${
+              state.mails.filter(mail => normalizeMailStatus(mail.status) === status).length
+            }</span>
           </div>
           <div class="mail-column-list">
             ${state.mails
