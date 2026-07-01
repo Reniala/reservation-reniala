@@ -1648,9 +1648,17 @@ function lineItemHtml(item, index) {
 
 function openReplyModal(mail, type, order) {
   const body = responseTemplate(type, order?.number || "CMD-A-COMPLETER");
+  const quotedBody = `
+
+---------------- Message recu ----------------
+De : ${mail.from || "-"}
+Date : ${mail.received || "-"}
+Objet : ${mail.subject || "-"}
+
+${mail.body || ""}`;
   modal(`<h3>Reponse mail</h3>
     <p class="muted">A envoyer a ${mail.from}</p>
-    <textarea id="replyText" style="width:100%;min-height:180px">${body}</textarea>
+    <textarea id="replyText" style="width:100%;min-height:260px">${body}${quotedBody}</textarea>
     <div class="notice" style="margin-top:12px">Le PDF doit etre joint depuis la fenetre de votre messagerie apres l'avoir enregistre avec le bouton Imprimer / PDF.</div>
     <div class="row" style="margin-top:12px">
       <button id="openMailBtn" type="button">Ouvrir le mail</button>
