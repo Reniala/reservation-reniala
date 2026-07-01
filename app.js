@@ -796,58 +796,88 @@ function metric(label, value) {
 }
 
 function renderPipeline() {
+  const columns = [
+    ["nouveau", "Nouveau"],
+    ["traite", "Traite"],
+    ["proposition", "Proposition"],
+    ["relance", "Relance"],
+    ["avis_paiement", "Avis de paiement"]
+  ];
+
   byId("pipeline").innerHTML = `
     <div class="toolbar">
       <div class="filters">
         <button id="newMailBtn">Ajouter un mail recu</button>
         <button id="syncMailsBtn" class="secondary">Synchroniser les mails</button>
       </div>
-      <button class="secondary" id="resetDemoBtn">Reinitialiser demo</button>
     </div>
-    <div class="split">
-      <div class="list">${state.mails.map(mailCard).join("")}</div>
-      <div class="card card-pad">
-        <h3>Modele de reponse</h3>
-        <p class="muted">Chaque document reprend le numero de commande et peut etre imprime en PDF depuis la fenetre document.</p>
-        <div class="notice">${responseTemplate("proforma", "CMD-EXEMPLE")}</div>
-      </div>
-    </div>`;
+
+    <div class="mail-kanban">
+      ${columns.map(([status, label]) => `
+        <section class="mail-column">
+          <div class="mail-column-head">
+            <h3>${label}</h3>
+            <span>${state.mails.filter(mail => (mail.status || "nouveau") === status).length}</span>
+          </div>
+          <div class="mail-column-list">
+            ${state.mails
+              .filter(mail => (mail.status || "nouveau") === status)
+              .map(mailCard)
+              .join("") || empty("Aucun mail.")}
+          </div>
+        </section>
+      `).join("")}
+    </div>
+  `;
+
   byId("newMailBtn").addEventListener("click", () => openMailModal());
+
   byId("syncMailsBtn").addEventListener("click", async () => {
-  try {
-    const result = await fetchJsonp(`${API_URL}?action=syncMails`);
-    alert(`${result.imported || 0} mail(s) importe(s).`);
-    await syncFromCloud();
-    render();
-  } catch (error) {
-    alert("Impossible de synchroniser les mails.");
-  }
-});
-  byId("resetDemoBtn").addEventListener("click", () => { if (confirm("Remettre les donnees de demonstration ?")) { state = structuredClone(seed); saveState(); render(); } });
-  document.querySelectorAll("[data-mail-action]").forEach(btn => btn.addEventListener("click", handleMailAction));
+    try {
+      const result = await fetchJsonp(`${API_URL}?action=syncMails`);
+      alert(`${result.imported || 0} mail(s) importe(s).`);
+      await syncFromCloud();
+      render();
+    } catch (error) {
+      alert("Impossible de synchroniser les mails.");
+    }
+  });
+
+  document.querySelectorAll("[data-mail-action]").forEach(btn =>
+    btn.addEventListener("click", handleMailAction)
+  );
+
+  document.querySelectorAll("[data-mail-status]").forEach(select =>
+    select.addEventListener("change", event => {
+      const mail = state.mails.find(m => m.id === event.target.dataset.mailStatus);
+      if (!mail) return;
+      mail.status = event.target.value;
+      saveState();
+      render();
+    })
+  );
 }
 
 function mailCard(mail) {
-  return `<article class="card mail-card">
-    <div class="row space">
-      <strong>${mail.subject}</strong>
-      ${statusPill(mail.status)}
-    </div>
-    <div class="muted">${mail.from} - recu le ${mail.received}</div>
-    <p>${mail.body}</p>
-    ${(mail.attachments || []).length ? `
-  <div class="attachments">
-    ${(mail.attachments || []).map(file => `
-      <a href="${file.url}" target="_blank" rel="noopener">Piece jointe : ${file.name}</a>
-    `).join("")}
-  </div>
-` : ""}
+  const status = mail.status || "nouveau";
+
+  return `<article class="mail-kanban-card">
+    <strong>${mail.subject || "Sans objet"}</strong>
+    <small>${mail.from || ""} - ${mail.received || ""}</small>
+
+    <select data-mail-status="${mail.id}">
+      ${[
+        ["nouveau", "Nouveau"],
+        ["traite", "Traite"],
+        ["proposition", "Proposition"],
+        ["relance", "Relance"],
+        ["avis_paiement", "Avis de paiement"]
+      ].map(([value, label]) => `<option value="${value}" ${status === value ? "selected" : ""}>${label}</option>`).join("")}
+    </select>
+
     <div class="row">
-      <button class="small" data-mail-action="quote" data-id="${mail.id}">Etablir devis</button>
-      <button class="small secondary" data-mail-action="proforma" data-id="${mail.id}">Proforma</button>
+      <button class="small" data-mail-action="open" data-id="${mail.id}">Ouvrir</button>
       <button class="small secondary" data-mail-action="reply" data-id="${mail.id}">Repondre</button>
-      <button class="small warning" data-mail-action="waiting" data-id="${mail.id}">En attente</button>
-      <button class="small" data-mail-action="paid" data-id="${mail.id}">Regle</button>
       <button class="small warning" data-mail-action="delete" data-id="${mail.id}">Supprimer</button>
     </div>
   </article>`;
@@ -856,18 +886,52 @@ function mailCard(mail) {
 function handleMailAction(event) {
   const mail = state.mails.find(m => m.id === event.currentTarget.dataset.id);
   const action = event.currentTarget.dataset.mailAction;
+
+  if (!mail) return;
+
+  if (action === "open") return openMailDetailModal(mail);
+  if (action === "reply") return openReplyModal(mail);
+
   if (action === "delete") {
-  if (!confirm("Supprimer ce mail du pipeline ?")) return;
-  state.mails = state.mails.filter(m => m.id !== mail.id);
-  saveState();
-  render();
-  return;
+    if (!confirm("Supprimer ce mail du pipeline ?")) return;
+    state.mails = state.mails.filter(m => m.id !== mail.id);
+    saveState();
+    render();
+    return;
+  }
 }
+
   if (action === "quote" || action === "proforma") return openOrderModal({ mail, docType: action === "quote" ? "devis" : "proforma" });
   if (action === "reply") return openReplyModal(mail);
   mail.status = action === "paid" ? "regle" : "en attente";
   saveState();
   render();
+}
+
+function openMailDetailModal(mail) {
+  modal(`<h3>${mail.subject || "Mail recu"}</h3>
+    <p class="muted">
+      De : ${mail.from || "-"}<br>
+      Recu le : ${mail.received || "-"}
+    </p>
+
+    <div class="card card-pad">
+      <p style="white-space:pre-wrap">${mail.body || ""}</p>
+    </div>
+
+    ${(mail.attachments || []).length ? `
+      <div class="card card-pad" style="margin-top:12px">
+        <h3>Pieces jointes</h3>
+        ${(mail.attachments || []).map(file => `
+          <p><a href="${file.url}" target="_blank" rel="noopener">${file.name}</a></p>
+        `).join("")}
+      </div>
+    ` : ""}
+
+    <div class="row" style="margin-top:16px">
+      <button class="secondary" data-close>Fermer</button>
+    </div>
+  `);
 }
 
 function renderClients() {
