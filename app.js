@@ -795,7 +795,6 @@ function metric(label, value) {
   return `<div class="card card-pad metric"><span>${label}</span><strong>${value}</strong></div>`;
 }
 
-function mailCard
 function normalizeMailStatus(status) {
   if (status === "en attente") return "nouveau";
   if (status === "regle") return "avis_paiement";
