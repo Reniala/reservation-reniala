@@ -1285,6 +1285,6 @@ body .document-preview .doc-footer {
   display: inline-block;
   background: transparent;
   mix-blend-mode: multiply;
-  transform: translateY(18px);
+  transform: translateY(22px);
   image-rendering: auto;
 }
