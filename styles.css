@@ -1256,3 +1256,15 @@ body .document-preview .doc-footer {
 .mail-kanban-card small {
   color: #5c6b58;
 }
+
+.stamp-row {
+  text-align: center;
+  padding-top: 8px;
+}
+
+.invoice-stamp {
+  width: 120px;
+  max-width: 120px;
+  height: auto;
+  display: inline-block;
+}
