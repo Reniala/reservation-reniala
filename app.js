@@ -835,6 +835,13 @@ function mailCard(mail) {
     </div>
     <div class="muted">${mail.from} - recu le ${mail.received}</div>
     <p>${mail.body}</p>
+    ${(mail.attachments || []).length ? `
+  <div class="attachments">
+    ${(mail.attachments || []).map(file => `
+      <a href="${file.url}" target="_blank" rel="noopener">Piece jointe : ${file.name}</a>
+    `).join("")}
+  </div>
+` : ""}
     <div class="row">
       <button class="small" data-mail-action="quote" data-id="${mail.id}">Etablir devis</button>
       <button class="small secondary" data-mail-action="proforma" data-id="${mail.id}">Proforma</button>
