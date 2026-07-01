@@ -888,7 +888,6 @@ function mailCard(mail) {
 
     <div class="row">
       <button class="small" data-mail-action="open" data-id="${mail.id}">Ouvrir</button>
-      <button class="small secondary" data-mail-action="reply" data-id="${mail.id}">Repondre</button>
       <button class="small warning" data-mail-action="delete" data-id="${mail.id}">Supprimer</button>
     </div>
   </article>`;
@@ -933,9 +932,14 @@ function openMailDetailModal(mail) {
     ` : ""}
 
     <div class="row" style="margin-top:16px">
+      <button id="replyFromDetailBtn" type="button">Repondre</button>
       <button class="secondary" data-close>Fermer</button>
     </div>
   `);
+  byId("replyFromDetailBtn").addEventListener("click", () => {
+    closeModal();
+    openReplyModal(mail, "devis", null);
+  });
 }
 
 function renderClients() {
@@ -1653,7 +1657,13 @@ function openReplyModal(mail, type, order) {
       <button id="copyReplyBtn" type="button" class="secondary">Copier le texte</button>
       <button class="secondary" data-close>Fermer</button>
     </div>`);
-  byId("openMailBtn").addEventListener("click", () => openMailClient(mail.from, `Reserve Reniala - ${labelDoc(type)} ${order?.number || ""}`.trim(), byId("replyText").value));
+ const replySubject = mail.subject && mail.subject.toLowerCase().startsWith("re:")
+  ? mail.subject
+  : `Re: ${mail.subject || "Demande de reservation"}`;
+
+byId("openMailBtn").addEventListener("click", () =>
+  openMailClient(mail.from, replySubject, byId("replyText").value)
+);
   byId("copyReplyBtn").addEventListener("click", () => copyText(byId("replyText").value));
 }
 
