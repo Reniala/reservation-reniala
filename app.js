@@ -1788,7 +1788,7 @@ function documentHtml(order, type) {
   <div class="amount-due-row">
     <span>Montant du</span>
     ${["facture", "annulation"].includes(type) ? `
-      <img class="invoice-stamp" src="assets/tampon-reniala.png" alt="Tampon Reserve Reniala">
+      <img class="invoice-stamp" src="assets/tampon-reniala.png?v=2" alt="Tampon Reserve Reniala">
     ` : ""}
     <strong>${fmtMoney(orderBalance(order))}</strong>
   </div>
