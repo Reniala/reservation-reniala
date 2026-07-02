@@ -1284,7 +1284,7 @@ body .document-preview .doc-footer {
   height: auto;
   display: inline-block;
   background: transparent;
-  transform: translateY(0px);
+  transform: translateY(0);
   image-rendering: auto;
 }
 
@@ -1293,7 +1293,7 @@ body .document-preview .doc-footer {
     width: 27mm !important;
     max-width: 27mm !important;
     height: auto !important;
-    transform: translateY(2mm) !important;
+    transform: translateY(1mm) !important;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
