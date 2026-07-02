@@ -903,11 +903,17 @@ function handleMailAction(event) {
   if (action === "reply") return openReplyModal(mail);
 
   if (action === "delete") {
-    if (!confirm("Supprimer ce mail du pipeline ?")) return;
-    state.mails = state.mails.filter(m => m.id !== mail.id);
-    saveState();
-    render();
-    return;
+  if (!confirm("Supprimer ce mail du pipeline ? Il ne reviendra plus apres synchronisation.")) return;
+
+  state.deletedMailIds = state.deletedMailIds || [];
+  if (!state.deletedMailIds.includes(mail.id)) {
+    state.deletedMailIds.push(mail.id);
+  }
+
+  state.mails = state.mails.filter(m => m.id !== mail.id);
+  saveState();
+  render();
+  return;
   }
 }
 
