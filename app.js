@@ -2298,6 +2298,9 @@ await fetch(API_URL, {
 alert(`Email marketing envoye a ${selectedEmails.length} destinataire(s).`);
 event.target.reset();
 
+alert(`Email marketing envoye a ${selectedEmails.length} destinataire(s).`);
+event.target.reset();
+
       if (!result.success) {
         alert(result.error || "Erreur pendant l'envoi.");
         return;
