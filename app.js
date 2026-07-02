@@ -955,6 +955,7 @@ function openMailDetailModal(mail) {
 
     <div class="row" style="margin-top:16px">
       <button id="replyFromDetailBtn" type="button">Repondre</button>
+      <button id="createOrderFromMailBtn" type="button">Creer commande</button>
       <button class="secondary" data-close>Fermer</button>
     </div>
   `);
@@ -962,6 +963,10 @@ function openMailDetailModal(mail) {
   byId("replyFromDetailBtn").addEventListener("click", () => {
     closeModal();
     openReplyModal(mail, "devis", null);
+  });
+  byId("createOrderFromMailBtn").addEventListener("click", () => {
+  closeModal();
+  openOrderModal({ mail: mail, docType: "proforma" });
   });
 }
 function renderClients() {
@@ -1527,18 +1532,52 @@ function openProductModal(p = {}) {
   });
 }
 
+function clientFromMail(mail) {
+  const email = cleanEmailAddress(mail.from);
+  const rawName = String(mail.from || "")
+    .replace(/<[^>]+>/g, "")
+    .replace(/"/g, "")
+    .trim();
+
+  const name = rawName || email.split("@")[0] || "Client mail";
+
+  let client = state.clients.find(c =>
+    String(c.email || "").trim().toLowerCase() === email.toLowerCase()
+  );
+
+  if (!client) {
+    client = {
+      id: uid(),
+      name: name,
+      email: email,
+      phone: "",
+      address: "",
+      rc: "",
+      nif: "",
+      stat: ""
+    };
+
+    state.clients.push(client);
+    saveState();
+  }
+
+  return client;
+}
+
 function openOrderModal({ mail = null, order = null, docType = "devis" }) {
+  const mailClient = mail ? clientFromMail(mail) : null;
+
   const o = order || {
     id: uid(),
     number: `CMD-${new Date().getFullYear()}-${String(state.orders.length + 1).padStart(4, "0")}`,
-    clientId: state.clients[0]?.id,
-    representative: "",
+    clientId: mailClient?.id || state.clients[0]?.id,
+    representative: mailClient?.name || "",
     clientRef: "",
-    tourName: "",
+    tourName: mail?.subject || "",
     orderDate: today(),
     dueDate: today(14),
     serviceDate: today(14),
-    specialInfo: "",
+    specialInfo: mail ? `Demande recue par mail : ${mail.subject || ""}\n\n${mail.body || ""}` : "",
     status: "Reservee",
     invoiceStatus: "a payer",
     billingSummary: "A facturer",
