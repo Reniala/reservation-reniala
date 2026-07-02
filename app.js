@@ -1951,13 +1951,29 @@ function specialInfoHtml(text) {
 }
 
 function lineScheduleHtml(item) {
-  if (!item.date && !item.startTime && !item.endTime) return "";
-  const date = formatFrenchDate(item.date);
+  if (!item.date && !item.endDate && !item.startTime && !item.endTime) return "";
+
+  const startDate = formatFrenchDate(item.date);
+  const endDate = formatFrenchDate(item.endDate || item.date);
   const start = formatTimeSeconds(item.startTime);
   const end = formatTimeSeconds(item.endTime);
-  if (date && start && end) return `<span class="line-schedule">${date} ${start} au ${end}</span>`;
-  if (date && start) return `<span class="line-schedule">${date} ${start}</span>`;
-  if (date) return `<span class="line-schedule">${date}</span>`;
+
+  if (startDate && endDate && startDate !== endDate) {
+    return `<span class="line-schedule">Du ${startDate} ${start || ""} au ${endDate} ${end || ""}</span>`;
+  }
+
+  if (startDate && start && end) {
+    return `<span class="line-schedule">${startDate} ${start} au ${end}</span>`;
+  }
+
+  if (startDate && start) {
+    return `<span class="line-schedule">${startDate} ${start}</span>`;
+  }
+
+  if (startDate) {
+    return `<span class="line-schedule">${startDate}</span>`;
+  }
+
   return `<span class="line-schedule">${start || ""}${end ? " au " + end : ""}</span>`;
 }
 
