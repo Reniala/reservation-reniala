@@ -1021,6 +1021,18 @@ function renderOrders() {
   document.querySelectorAll("[data-order-edit]").forEach(btn => btn.addEventListener("click", () => openOrderModal({ order: state.orders.find(o => o.id === btn.dataset.orderEdit) })));
   document.querySelectorAll("[data-order-payment]").forEach(btn => btn.addEventListener("click", () => openPaymentModal(state.orders.find(o => o.id === btn.dataset.orderPayment))));
   document.querySelectorAll("[data-order-status]").forEach(btn => btn.addEventListener("change", e => updateOrderStatus(btn.dataset.orderStatus, e.target.value)));
+  document.querySelectorAll("[data-order-delete]").forEach(btn =>
+  btn.addEventListener("click", () => {
+    const order = state.orders.find(o => o.id === btn.dataset.orderDelete);
+    if (!order) return;
+
+    if (!confirm(`Supprimer la commande ${order.number} ? Cette action est definitive.`)) return;
+
+    state.orders = state.orders.filter(o => o.id !== order.id);
+    saveState();
+    render();
+  })
+);
 }
 
 function orderColumn(status) {
@@ -1040,12 +1052,13 @@ function orderCard(order) {
       </select>
     </label>
     <div class="row">
-      <button class="small secondary" data-order-edit="${order.id}">Modifier</button>
-      <button class="small secondary" data-order-payment="${order.id}">Paiement</button>
-      <button class="small" data-order-doc="${order.id}" data-type="proforma">Proforma</button>
-      <button class="small" data-order-doc="${order.id}" data-type="facture">Facture</button>
-      ${order.status === "Annulee" ? `<button class="small warning" data-order-doc="${order.id}" data-type="annulation">Facture annulation</button>${orderCredit(order) ? `<button class="small secondary" data-order-doc="${order.id}" data-type="avoir">Avoir</button>` : ""}` : ""}
-    </div>
+  <button class="small secondary" data-order-edit="${order.id}">Modifier</button>
+  <button class="small secondary" data-order-payment="${order.id}">Paiement</button>
+  <button class="small" data-order-doc="${order.id}" data-type="proforma">Proforma</button>
+  <button class="small" data-order-doc="${order.id}" data-type="facture">Facture</button>
+  ${order.status === "Annulee" ? `<button class="small warning" data-order-doc="${order.id}" data-type="annulation">Facture annulation</button>${orderCredit(order) ? `<button class="small secondary" data-order-doc="${order.id}" data-type="avoir">Avoir</button>` : ""}` : ""}
+  <button class="small warning" data-order-delete="${order.id}">Supprimer</button>
+</div>
   </article>`;
 }
 
