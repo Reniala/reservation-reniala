@@ -1599,6 +1599,7 @@ function openOrderModal({ mail = null, order = null, docType = "devis" }) {
   });
  byId("addLineBtn").addEventListener("click", () => {
   const serviceDate = byId("orderForm").elements.serviceDate.value || today();
+
   items.push({
     productId: state.products[0]?.id,
     qty: 1,
@@ -1608,6 +1609,7 @@ function openOrderModal({ mail = null, order = null, docType = "devis" }) {
     startTime: "08:00",
     endTime: "10:00"
   });
+
   renderLines();
 });
   byId("orderForm").elements.serviceDate.addEventListener("change", event => {
