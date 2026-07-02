@@ -1546,7 +1546,8 @@ function openOrderModal({ mail = null, order = null, docType = "devis" }) {
     visitState: "attendu",
     sourceMailId: mail?.id || null,
     items: [{ productId: state.products[0]?.id, qty: 1, price: state.products[0]?.price || 0, date: today(14), endDate: today(14), startTime: "08:00", endTime: "10:00" }]
-  modal(`<h3>${order ? "Modifier commande" : "Creer " + docType}</h3>
+    };
+    modal(`<h3>${order ? "Modifier commande" : "Creer " + docType}</h3>
     <form id="orderForm" class="grid">
       <div class="form-grid">
         <label>Client<select name="clientId">${state.clients.map(c => `<option value="${c.id}" ${c.id === o.clientId ? "selected" : ""}>${c.name}</option>`).join("")}</select></label>
