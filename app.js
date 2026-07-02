@@ -2309,8 +2309,9 @@ event.target.reset();
       alert(`${result.sent} email(s) envoye(s).`);
       event.target.reset();
     } catch (error) {
-      alert("Impossible d'envoyer l'email marketing.");
-    }
+  console.error(error);
+  alert("Erreur email marketing : " + (error.message || error));
+}
   });
 }
 
