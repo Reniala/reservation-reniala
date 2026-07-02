@@ -1280,7 +1280,11 @@ function readonlyServiceHtml(item) {
 }
 
 function orderOccursOnDay(order, day) {
-  return order.serviceDate === day || (order.items || []).some(item => item.date === day);
+  return order.serviceDate === day || (order.items || []).some(item => {
+    const start = item.date || order.serviceDate;
+    const end = item.endDate || start;
+    return day >= start && day <= end;
+  });
 }
 
 function firstScheduleForDay(order, day) {
@@ -1541,8 +1545,7 @@ function openOrderModal({ mail = null, order = null, docType = "devis" }) {
     payments: [],
     visitState: "attendu",
     sourceMailId: mail?.id || null,
-    items: [{ productId: state.products[0]?.id, qty: 1, price: state.products[0]?.price || 0, date: today(14), startTime: "08:00", endTime: "10:00" }]
-  };
+    items: [{ productId: state.products[0]?.id, qty: 1, price: state.products[0]?.price || 0, date: today(14), endDate: today(14), startTime: "08:00", endTime: "10:00" }]
   modal(`<h3>${order ? "Modifier commande" : "Creer " + docType}</h3>
     <form id="orderForm" class="grid">
       <div class="form-grid">
@@ -1582,6 +1585,7 @@ function openOrderModal({ mail = null, order = null, docType = "devis" }) {
     document.querySelectorAll("[data-line-qty]").forEach(inputEl => inputEl.addEventListener("input", e => items[Number(e.target.dataset.lineQty)].qty = Number(e.target.value || 0)));
     document.querySelectorAll("[data-line-price]").forEach(inputEl => inputEl.addEventListener("input", e => items[Number(e.target.dataset.linePrice)].price = Number(e.target.value || 0)));
     document.querySelectorAll("[data-line-date]").forEach(inputEl => inputEl.addEventListener("input", e => items[Number(e.target.dataset.lineDate)].date = e.target.value));
+    document.querySelectorAll("[data-line-end-date]").forEach(inputEl => inputEl.addEventListener("input", e => items[Number(e.target.dataset.lineEndDate)].endDate = e.target.value));
     document.querySelectorAll("[data-line-start]").forEach(inputEl => inputEl.addEventListener("input", e => items[Number(e.target.dataset.lineStart)].startTime = e.target.value));
     document.querySelectorAll("[data-line-end]").forEach(inputEl => inputEl.addEventListener("input", e => items[Number(e.target.dataset.lineEnd)].endTime = e.target.value));
     document.querySelectorAll("[data-line-remove]").forEach(btn => btn.addEventListener("click", () => { items.splice(Number(btn.dataset.lineRemove), 1); renderLines(); }));
@@ -1593,11 +1597,24 @@ function openOrderModal({ mail = null, order = null, docType = "devis" }) {
     field.value = field.value.trim() ? `${field.value.trim()}\n\n${template}` : template;
     field.focus();
   });
-  byId("addLineBtn").addEventListener("click", () => { items.push({ productId: state.products[0]?.id, qty: 1, price: state.products[0]?.price || 0, date: byId("orderForm").elements.serviceDate.value || today(), startTime: "08:00", endTime: "10:00" }); renderLines(); });
+ byId("addLineBtn").addEventListener("click", () => {
+  const serviceDate = byId("orderForm").elements.serviceDate.value || today();
+  items.push({
+    productId: state.products[0]?.id,
+    qty: 1,
+    price: state.products[0]?.price || 0,
+    date: serviceDate,
+    endDate: serviceDate,
+    startTime: "08:00",
+    endTime: "10:00"
+  });
+  renderLines();
+});
   byId("orderForm").elements.serviceDate.addEventListener("change", event => {
   items.forEach(item => {
     item.date = event.target.value;
-  });
+    item.endDate = event.target.value;
+});
   renderLines();
 });
   byId("previewDocBtn").addEventListener("click", () => openDocumentModal(readOrderForm(o, items), docType, false));
@@ -1664,8 +1681,10 @@ function paymentTable(order) {
 
 function lineItemHtml(item, index) {
   item.date = item.date || byId("orderForm")?.elements.serviceDate?.value || today();
+  item.endDate = item.endDate || item.date;
   item.startTime = item.startTime || "";
   item.endTime = item.endTime || "";
+
   return `<div class="line-item">
     <div class="line-main">
       <label>Produit<select data-line-product="${index}">${state.products.map(p => `<option value="${p.id}" ${p.id === item.productId ? "selected" : ""}>${p.name}</option>`).join("")}</select></label>
@@ -1674,7 +1693,8 @@ function lineItemHtml(item, index) {
       <button type="button" class="danger small" data-line-remove="${index}">X</button>
     </div>
     <div class="line-times">
-      <label>Date prestation<input type="date" data-line-date="${index}" value="${item.date}"></label>
+      <label>Date debut<input type="date" data-line-date="${index}" value="${item.date}"></label>
+      <label>Date fin<input type="date" data-line-end-date="${index}" value="${item.endDate || item.date}"></label>
       <label>Heure debut<select data-line-start="${index}">${timeOptions(item.startTime)}</select></label>
       <label>Heure fin<select data-line-end="${index}">${timeOptions(item.endTime)}</select></label>
     </div>
