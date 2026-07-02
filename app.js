@@ -2253,66 +2253,55 @@ function renderEmailMarketing() {
   });
 
   byId("marketingForm").addEventListener("submit", async event => {
-    event.preventDefault();
+  event.preventDefault();
 
-    const selectedEmails = [...document.querySelectorAll("[data-marketing-client]:checked")]
-      .map(input => input.value);
+  const selectedEmails = [...document.querySelectorAll("[data-marketing-client]:checked")]
+    .map(input => input.value);
 
-    if (!selectedEmails.length) {
-      alert("Selectionne au moins un destinataire.");
+  if (!selectedEmails.length) {
+    alert("Selectionne au moins un destinataire.");
+    return;
+  }
+
+  const data = Object.fromEntries(new FormData(event.target));
+
+  if (!confirm(`Envoyer cet email a ${selectedEmails.length} destinataire(s) ?`)) return;
+
+  try {
+    const attachmentInput = byId("marketingAttachment");
+    const attachmentFile = attachmentInput.files[0] || null;
+
+    if (attachmentFile && attachmentFile.size > 4 * 1024 * 1024) {
+      alert("La piece jointe est trop lourde. Merci de choisir un fichier de moins de 4 Mo.");
       return;
     }
 
-    const data = Object.fromEntries(new FormData(event.target));
+    const attachment = attachmentFile
+      ? await fileToBase64(attachmentFile)
+      : null;
 
-    if (!confirm(`Envoyer cet email a ${selectedEmails.length} destinataire(s) ?`)) return;
+    await fetch(API_URL, {
+      method: "POST",
+      mode: "no-cors",
+      headers: {
+        "Content-Type": "text/plain;charset=utf-8"
+      },
+      body: JSON.stringify({
+        action: "sendMarketing",
+        bcc: selectedEmails,
+        subject: data.subject,
+        body: data.body,
+        attachment: attachment
+      })
+    });
 
-    try {
-      const attachmentInput = byId("marketingAttachment");
-      const attachmentFile = attachmentInput.files[0] || null;
-
-    if (attachmentFile && attachmentFile.size > 4 * 1024 * 1024) {
-    alert("La piece jointe est trop lourde. Merci de choisir un fichier de moins de 4 Mo.");
-    return;
-}
-
-const attachment = attachmentFile
-  ? await fileToBase64(attachmentFile)
-  : null;
-
-await fetch(API_URL, {
-  method: "POST",
-  mode: "no-cors",
-  headers: {
-    "Content-Type": "text/plain;charset=utf-8"
-  },
-  body: JSON.stringify({
-    action: "sendMarketing",
-    bcc: selectedEmails,
-    subject: data.subject,
-    body: data.body,
-    attachment: attachment
-  })
+    alert(`Email marketing envoye a ${selectedEmails.length} destinataire(s).`);
+    event.target.reset();
+  } catch (error) {
+    console.error(error);
+    alert("Erreur email marketing : " + (error.message || error));
+  }
 });
-
-alert(`Email marketing envoye a ${selectedEmails.length} destinataire(s).`);
-event.target.reset();
-
-alert(`Email marketing envoye a ${selectedEmails.length} destinataire(s).`);
-event.target.reset();
-
-      if (!result.success) {
-        alert(result.error || "Erreur pendant l'envoi.");
-        return;
-      }
-
-      alert(`${result.sent} email(s) envoye(s).`);
-      event.target.reset();
-    } catch (error) {
-  console.error(error);
-  alert("Erreur email marketing : " + (error.message || error));
-}
-  });
 }
 
 function renderSettings() {
