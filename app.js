@@ -29,7 +29,8 @@ const NAV = [
   ["orders", "Commandes"],
   ["billing", "Facturation"],
   ["calendar", "Calendrier"],
-  ["settings", "Parametres"]
+  ["settings", "Parametres"],
+  ["emailMarketing", "Email marketing"]
 ];
 
 const PRODUCTS = [
@@ -299,10 +300,12 @@ var titles = {
   orders: "Reservations et commandes",
   billing: "Factures et paiements",
   calendar: "Calendrier des prestations",
-  settings: "Parametres"
+  settings: "Parametres",
+  emailMarketing: "Email marketing"
 };
 
-var renderers = { dashboard: renderDashboard, pipeline: renderPipeline, clients: renderClients, products: renderProducts, orders: renderOrders, billing: renderBilling, calendar: renderCalendar, settings: renderSettings };
+var renderers = { dashboard: renderDashboard, pipeline: renderPipeline, clients: renderClients, products: renderProducts, orders: renderOrders, billing: renderBilling, calendar: renderCalendar, settings: renderSettings,
+emailMarketing: renderEmailMarketing };
 
 function renderDashboard() {
   const isAdmin = state.user?.role === "Administrateur principal";
@@ -2174,6 +2177,89 @@ function reserveSettings() {
     salesTerms: RESERVE.salesTerms.join("\n"),
     ...(state.settings || {})
   };
+}
+
+function renderEmailMarketing() {
+  if (state.user?.role !== "Administrateur principal") {
+    byId("emailMarketing").innerHTML = empty("Acces reserve a l'administrateur.");
+    return;
+  }
+
+  const clientsWithEmail = state.clients.filter(client => client.email);
+
+  byId("emailMarketing").innerHTML = `
+    <div class="card card-pad">
+      <h3>Email marketing</h3>
+      <p class="muted">Envoi depuis info@reniala-madagascar.com aux clients selectionnes.</p>
+
+      <form id="marketingForm" class="form-grid">
+        <label class="wide">Objet
+          <input name="subject" required placeholder="Objet du message">
+        </label>
+
+        <label class="wide">Message
+          <textarea name="body" required style="min-height:220px"></textarea>
+        </label>
+
+        <div class="wide">
+          <div class="row space">
+            <h3>Destinataires</h3>
+            <button type="button" class="small secondary" id="selectAllMarketingClients">Tout selectionner</button>
+          </div>
+
+          <div class="card card-pad" style="max-height:320px;overflow:auto">
+            ${clientsWithEmail.map(client => `
+              <label style="display:block;margin-bottom:8px">
+                <input type="checkbox" data-marketing-client value="${client.email}">
+                ${client.name} - ${client.email}
+              </label>
+            `).join("") || empty("Aucun client avec adresse mail.")}
+          </div>
+        </div>
+
+        <div class="row wide">
+          <button type="submit">Envoyer</button>
+        </div>
+      </form>
+    </div>
+  `;
+
+  byId("selectAllMarketingClients").addEventListener("click", () => {
+    document.querySelectorAll("[data-marketing-client]").forEach(input => {
+      input.checked = true;
+    });
+  });
+
+  byId("marketingForm").addEventListener("submit", async event => {
+    event.preventDefault();
+
+    const selectedEmails = [...document.querySelectorAll("[data-marketing-client]:checked")]
+      .map(input => input.value);
+
+    if (!selectedEmails.length) {
+      alert("Selectionne au moins un destinataire.");
+      return;
+    }
+
+    const data = Object.fromEntries(new FormData(event.target));
+
+    if (!confirm(`Envoyer cet email a ${selectedEmails.length} destinataire(s) ?`)) return;
+
+    try {
+      const url = `${API_URL}?action=sendMarketing&bcc=${encodeURIComponent(selectedEmails.join(","))}&subject=${encodeURIComponent(data.subject)}&body=${encodeURIComponent(data.body)}`;
+      const result = await fetchJsonp(url);
+
+      if (!result.success) {
+        alert(result.error || "Erreur pendant l'envoi.");
+        return;
+      }
+
+      alert(`${result.sent} email(s) envoye(s).`);
+      event.target.reset();
+    } catch (error) {
+      alert("Impossible d'envoyer l'email marketing.");
+    }
+  });
 }
 
 function renderSettings() {
