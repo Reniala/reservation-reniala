@@ -2179,6 +2179,24 @@ function reserveSettings() {
   };
 }
 
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.onload = () => {
+      const result = String(reader.result || "");
+      resolve({
+        name: file.name,
+        mimeType: file.type || "application/octet-stream",
+        data: result.split(",")[1]
+      });
+    };
+
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
 function renderEmailMarketing() {
   if (state.user?.role !== "Administrateur principal") {
     byId("emailMarketing").innerHTML = empty("Acces reserve a l'administrateur.");
@@ -2199,6 +2217,10 @@ function renderEmailMarketing() {
 
         <label class="wide">Message
           <textarea name="body" required style="min-height:220px"></textarea>
+        </label>
+
+        <label class="wide">Piece jointe
+          <input id="marketingAttachment" type="file">
         </label>
 
         <div class="wide">
@@ -2246,8 +2268,28 @@ function renderEmailMarketing() {
     if (!confirm(`Envoyer cet email a ${selectedEmails.length} destinataire(s) ?`)) return;
 
     try {
-      const url = `${API_URL}?action=sendMarketing&bcc=${encodeURIComponent(selectedEmails.join(","))}&subject=${encodeURIComponent(data.subject)}&body=${encodeURIComponent(data.body)}`;
-      const result = await fetchJsonp(url);
+      const attachmentInput = byId("marketingAttachment");
+const attachment = attachmentInput.files[0]
+  ? await fileToBase64(attachmentInput.files[0])
+  : null;
+
+await fetch(API_URL, {
+  method: "POST",
+  mode: "no-cors",
+  headers: {
+    "Content-Type": "text/plain;charset=utf-8"
+  },
+  body: JSON.stringify({
+    action: "sendMarketing",
+    bcc: selectedEmails,
+    subject: data.subject,
+    body: data.body,
+    attachment: attachment
+  })
+});
+
+alert(`Email marketing envoye a ${selectedEmails.length} destinataire(s).`);
+event.target.reset();
 
       if (!result.success) {
         alert(result.error || "Erreur pendant l'envoi.");
