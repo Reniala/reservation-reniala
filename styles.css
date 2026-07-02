@@ -1279,12 +1279,23 @@ body .document-preview .doc-footer {
 }
 
 .invoice-stamp {
-  width: 90px;
-  max-width: 90px;
+  width: 100px;
+  max-width: 100px;
   height: auto;
   display: inline-block;
   background: transparent;
   mix-blend-mode: multiply;
-  transform: translateY(20px);
+  transform: translateY(0px);
   image-rendering: auto;
+}
+
+@media print {
+  .invoice-stamp {
+    width: 27mm !important;
+    max-width: 27mm !important;
+    height: auto !important;
+    transform: translateY(2mm) !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
 }
