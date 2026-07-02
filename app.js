@@ -2269,8 +2269,15 @@ function renderEmailMarketing() {
 
     try {
       const attachmentInput = byId("marketingAttachment");
-const attachment = attachmentInput.files[0]
-  ? await fileToBase64(attachmentInput.files[0])
+      const attachmentFile = attachmentInput.files[0] || null;
+
+    if (attachmentFile && attachmentFile.size > 4 * 1024 * 1024) {
+    alert("La piece jointe est trop lourde. Merci de choisir un fichier de moins de 4 Mo.");
+    return;
+}
+
+const attachment = attachmentFile
+  ? await fileToBase64(attachmentFile)
   : null;
 
 await fetch(API_URL, {
