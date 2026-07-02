@@ -1536,6 +1536,7 @@ function openOrderModal({ mail = null, order = null, docType = "devis" }) {
     clientRef: "",
     tourName: "",
     orderDate: today(),
+    dueDate: today(14),
     serviceDate: today(14),
     specialInfo: "",
     status: "Reservee",
@@ -1555,6 +1556,7 @@ function openOrderModal({ mail = null, order = null, docType = "devis" }) {
         ${input("clientRef", "Reference client", o.clientRef)}
         ${input("tourName", "Nom du tour", o.tourName)}
         ${input("orderDate", "Date commande", o.orderDate, true, "date")}
+        ${input("dueDate", "Date echeance", o.dueDate || o.orderDate, true, "date")}
         ${input("serviceDate", "Date prestation", o.serviceDate, true, "date")}
         <label>Statut commande<select name="status">${["Reservee","Annulee","Retournee"].map(s => `<option ${s === o.status ? "selected" : ""}>${s}</option>`).join("")}</select></label>
         <label>Conditions de paiement<select name="paymentTerms">${["Immediat","Acompte puis solde","Paiement a l'arrivee","Paiement apres la prestation","Virement avant prestation","Par virement bancaire"].map(s => `<option ${s === (o.paymentTerms || "Immediat") ? "selected" : ""}>${s}</option>`).join("")}</select></label>
