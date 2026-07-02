@@ -1,4 +1,4 @@
-const API_URL = "https://script.google.com/macros/s/AKfycbzh0NHaQvFuo2inECDoBwurOQif4IHQryj32YlJz_WoASpQNThYSZ-btPPFGKjHQBNMkw/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbwbhWBO2vc8kPBH310i8yIiaRgUpuVvaR8KX2dGe1mxFU2D8oRooX9GbCONDoCfNhPdTA/exec";
 function uid() {
   return Math.random().toString(36).slice(2, 9);
 }
