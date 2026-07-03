@@ -1267,8 +1267,8 @@ function openReservationDetailModal(order) {
         <section class="card card-pad">
           <h3>Client</h3>
           <strong>${client.name || clientName(order.clientId)}</strong><br>
-          ${client.phone || ""}<br>
-          ${client.email || ""}<br>
+          ${client.phone || ""}${client.phone2 ? "<br>" + client.phone2 : ""}
+          ${client.email || ""}${client.email2 ? "<br>" + client.email2 : ""}
           ${client.address || ""}
         </section>
         <section class="card card-pad">
@@ -1425,8 +1425,10 @@ function openClientModal(client = {}) {
   modal(`<h3>${client.id ? "Modifier" : "Nouveau"} client</h3>
     <form id="clientForm" class="form-grid">
       ${input("name", "Nom", client.name, true)}
-      ${input("email", "Mail", client.email, true, "email")}
-      ${input("phone", "Telephone", client.phone)}
+      ${input("email", "Email 1", client.email)}
+      ${input("email2", "Email 2", client.email2)}
+      ${input("phone", "Telephone 1", client.phone)}
+      ${input("phone2", "Telephone 2", client.phone2)}
       ${input("address", "Adresse postale", client.address)}
       ${input("rc", "RCS", client.rc)}
       ${input("nif", "NIF", client.nif)}
@@ -1464,13 +1466,15 @@ function importClientsCsv(event) {
       const get = name => row[headers.indexOf(name)] || "";
       const fiscal = get("coordonnees fiscales");
 
-      const client = {
+       const client = {
         id: uid(),
         name: get("client").trim(),
         representative: get("representant").trim(),
         phone: get("telephone").trim(),
+        phone2: get("telephone 2").trim(),
         address: get("adresse").trim(),
         email: get("mail").trim(),
+        email2: get("mail 2").trim(),
         rc: extractFiscal(fiscal, "rc"),
         nif: extractFiscal(fiscal, "nif"),
         stat: extractFiscal(fiscal, "stat")
@@ -1884,7 +1888,7 @@ function documentHtml(order, type) {
 </div>
       <div class="doc-client-block">
         <h3>Client :</h3>
-        <strong>${client.name || ""}</strong><br>${client.address || ""}<br>${client.email || ""}<br>${client.phone || ""}<br>RCS: ${client.rc || "-"}<br>NIF: ${client.nif || "-"}<br>Stat: ${client.stat || "-"}
+        <strong>${client.name || ""}</strong><br>${client.address || ""}<br>${client.email || ""}${client.email2 ? "<br>" + client.email2 : ""}<br>${client.phone || ""}${client.phone2 ? "<br>" + client.phone2 : ""}<br>RCS: ${client.rc || "-"}<br>NIF: ${client.nif || "-"}<br>Stat: ${client.stat || "-"}
       </div>
     </div>
     <div class="doc-title">${labelDoc(type)} ${visibleNumber}</div>
@@ -2243,7 +2247,7 @@ function renderEmailMarketing() {
     return;
   }
 
-  const clientsWithEmail = state.clients.filter(client => client.email);
+  const clientsWithEmail = state.clients.filter(client => client.email || client.email2);
 
   byId("emailMarketing").innerHTML = `
     <div class="card card-pad">
@@ -2272,8 +2276,14 @@ function renderEmailMarketing() {
           <div class="card card-pad" style="max-height:320px;overflow:auto">
             ${clientsWithEmail.map(client => `
               <label style="display:block;margin-bottom:8px">
-                <input type="checkbox" data-marketing-client value="${client.email}">
-                ${client.name} - ${client.email}
+                ${client.email ? `<label style="display:block;margin-bottom:8px">
+                  <input type="checkbox" data-marketing-client value="${client.email}">
+                  ${client.name} - ${client.email}
+              </label>` : ""}
+              ${client.email2 ? `<label style="display:block;margin-bottom:8px">
+                <input type="checkbox" data-marketing-client value="${client.email2}">
+                ${client.name} - ${client.email2}
+              </label>` : ""}
               </label>
             `).join("") || empty("Aucun client avec adresse mail.")}
           </div>
