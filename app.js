@@ -927,6 +927,44 @@ function mailAttachments(mail) {
   return [];
 }
 
+function clientFromMailOrder(mail) {
+  const text = `${mail.subject || ""} ${mail.body || ""}`;
+  const match = text.match(/CMD-\d{4}-\d{4}/);
+
+  if (!match) return "";
+
+  const order = state.orders.find(o => o.number === match[0]);
+  if (!order) return "";
+
+  return clientName(order.clientId);
+}
+
+function mailSenderCheck(mail) {
+  const text = `${mail.subject || ""} ${mail.body || ""}`;
+  const match = text.match(/CMD-\d{4}-\d{4}/);
+
+  if (!match) return "";
+
+  const order = state.orders.find(o => o.number === match[0]);
+  if (!order) return "";
+
+  const client = state.clients.find(c => c.id === order.clientId);
+  if (!client) return "";
+
+  const sender = String(mail.fromEmail || cleanEmailAddress(mail.from) || "").toLowerCase();
+  const clientEmail = String(client.email || "").toLowerCase();
+
+  if (!sender || !clientEmail) {
+    return `<p><strong>Expediteur :</strong> ${mail.from || "-"}</p>`;
+  }
+
+  if (sender === clientEmail) {
+    return `<p><strong>Expediteur :</strong> ${sender} <span class="pill">Client confirme</span></p>`;
+  }
+
+  return `<p><strong>Expediteur :</strong> ${sender} <span class="pill danger">Pas l'email du client</span><br><span class="muted">Email client attendu : ${clientEmail}</span></p>`;
+}
+
 function openMailDetailModal(mail) {
   const attachments = mailAttachments(mail);
 
@@ -935,6 +973,8 @@ function openMailDetailModal(mail) {
       De : ${mail.from || "-"}<br>
       Recu le : ${mail.received || "-"}
     </p>
+    ${clientFromMailOrder(mail) ? `<p><strong>Client lie :</strong> ${clientFromMailOrder(mail)}</p>` : ""}
+    ${mailSenderCheck(mail)}
 
     <div class="card card-pad">
       <p style="white-space:pre-wrap">${mail.body || ""}</p>
