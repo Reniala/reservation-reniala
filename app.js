@@ -72,7 +72,7 @@ const PRODUCTS = [
 const seed = {
   user: null,
   clients: [
-    { id: uid(), name: "Tropic Tours", address: "Tulear, Madagascar", rc: "RC-247", nif: "300145", stat: "STAT-TOUR", email: "booking@tropictours.mg", phone: "+261 34 00 000 01" },
+    { id: uid(), name: "Tropic Tours", address: "Tulear, Madagascar", rc: "RCS-247", nif: "300145", stat: "STAT-TOUR", email: "booking@tropictours.mg", phone: "+261 34 00 000 01" },
     { id: uid(), name: "Famille Martin", address: "12 rue des Acacias, Lyon", rc: "", nif: "", stat: "", email: "martin@example.com", phone: "+33 6 22 44 55 11" }
   ],
   products: PRODUCTS.map((p, index) => ({ id: `P${index + 1}`, ...p })),
@@ -1019,7 +1019,7 @@ function renderClients() {
       <button id="importClientsBtn" class="secondary">Importer CSV</button>
       <input id="clientsCsvInput" type="file" accept=".csv" class="hidden">
     </div>
-    <div class="card">${table(["Nom","Mail","Telephone","RC","NIF","Stat",""], state.clients.map(c => [
+    <div class="card">${table(["Nom","Mail","Telephone","RCS","NIF","Stat",""], state.clients.map(c => [
       c.name, c.email, c.phone, c.rc || "-", c.nif || "-", c.stat || "-",
       `<button class="small secondary" data-client="${c.id}">Modifier</button>
        <button class="small warning" data-delete-client="${c.id}">Supprimer</button>`
@@ -1428,7 +1428,7 @@ function openClientModal(client = {}) {
       ${input("email", "Mail", client.email, true, "email")}
       ${input("phone", "Telephone", client.phone)}
       ${input("address", "Adresse postale", client.address)}
-      ${input("rc", "RC", client.rc)}
+      ${input("rc", "RCS", client.rc)}
       ${input("nif", "NIF", client.nif)}
       ${input("stat", "N statistique", client.stat)}
       <div class="row wide"><button>Enregistrer</button><button type="button" class="secondary" data-close>Fermer</button></div>
@@ -1884,7 +1884,7 @@ function documentHtml(order, type) {
 </div>
       <div class="doc-client-block">
         <h3>Client :</h3>
-        <strong>${client.name || ""}</strong><br>${client.address || ""}<br>${client.email || ""}<br>${client.phone || ""}<br>RC: ${client.rc || "-"}<br>NIF: ${client.nif || "-"}<br>Stat: ${client.stat || "-"}
+        <strong>${client.name || ""}</strong><br>${client.address || ""}<br>${client.email || ""}<br>${client.phone || ""}<br>RCS: ${client.rc || "-"}<br>NIF: ${client.nif || "-"}<br>Stat: ${client.stat || "-"}
       </div>
     </div>
     <div class="doc-title">${labelDoc(type)} ${visibleNumber}</div>
