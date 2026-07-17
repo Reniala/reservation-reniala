@@ -2398,6 +2398,26 @@ function renderEmailMarketing() {
 
     alert(`Email marketing envoye a ${selectedEmails.length} destinataire(s).`);
     event.target.reset();
+    state.mails.unshift({
+  id: uid(),
+  from: "Reserve Reniala",
+  fromEmail: "info@reniala-madagascar.com",
+  subject: subject,
+  received: today(),
+  status: "proposition",
+  body: body,
+  clientId: null,
+  attachments: attachment
+    ? [{
+        name: attachment.name,
+        url: "",
+        mimeType: attachment.mimeType,
+        size: attachment.size
+      }]
+    : []
+});
+
+saveState();
   } catch (error) {
     console.error(error);
     alert("Erreur email marketing : " + (error.message || error));
