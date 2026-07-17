@@ -1611,12 +1611,26 @@ function clientFromMail(mail) {
   return client;
 }
 
+function nextOrderNumber() {
+  const year = new Date().getFullYear();
+  const prefix = `CMD-${year}-`;
+
+  const max = state.orders.reduce((highest, order) => {
+    const number = String(order.number || "");
+    if (!number.startsWith(prefix)) return highest;
+
+    const value = Number(number.replace(prefix, ""));
+    return Number.isFinite(value) ? Math.max(highest, value) : highest;
+  }, 0);
+
+  return `${prefix}${String(max + 1).padStart(4, "0")}`;
+}
+
 function openOrderModal({ mail = null, order = null, docType = "devis" }) {
   const mailClient = mail ? clientFromMail(mail) : null;
 
   const o = order || {
-    id: uid(),
-    number: `CMD-${new Date().getFullYear()}-${String(state.orders.length + 1).padStart(4, "0")}`,
+    id: uid(),number: nextOrderNumber(),
     clientId: mailClient?.id || state.clients[0]?.id,
     representative: mailClient?.name || "",
     clientRef: "",
