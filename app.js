@@ -2395,17 +2395,14 @@ function renderEmailMarketing() {
         attachment: attachment
       })
     });
-
-    alert(`Email marketing envoye a ${selectedEmails.length} destinataire(s).`);
-    event.target.reset();
-  const marketingMail = {
+const marketingMail = {
   id: uid(),
   from: "Reserve Reniala",
   fromEmail: "info@reniala-madagascar.com",
-  subject: subject,
+  subject: data.subject,
   received: today(),
   status: "proposition",
-  body: body,
+  body: data.body,
   clientId: null,
   attachments: attachment
     ? [{
@@ -2422,11 +2419,11 @@ state.mails.unshift(marketingMail);
 
 saveState();
 
+alert(`Email marketing envoye a ${selectedEmails.length} destinataire(s).`);
+
+event.target.reset();
 currentView = "pipeline";
 render();
-
-alert(`Email marketing envoye a ${recipients.length} destinataire(s).`);
-event.target.reset();
   } catch (error) {
     console.error(error);
     alert("Erreur email marketing : " + (error.message || error));
