@@ -399,7 +399,7 @@ function renderMonthlyReport() {
     <div class="card card-pad" style="margin-top:16px">
       <div class="row space">
         <h3>Factures par client - mensuel</h3>
-        <button class="small secondary" onclick="copyAccountingCsv('month')">Copier CSV</button>
+        <button class="small secondary" onclick="copyAccountingTable('month')">Copier tableau</button>
       </div>
       ${accountingFilters("month")}
       ${clientInvoiceTable("month")}
@@ -673,7 +673,7 @@ function renderYearlyReport() {
     <div class="card card-pad" style="margin-top:16px">
       <div class="row space">
         <h3>Factures par client - annuel</h3>
-        <button class="small secondary" onclick="copyAccountingCsv('year')">Copier CSV</button>
+        <button class="small secondary" onclick="copyAccountingTable('year')">Copier tableau</button>
       </div>
       ${accountingFilters("year")}
       ${clientInvoiceTable("year")}
@@ -784,15 +784,52 @@ function clientInvoiceTable(period = "month") {
   );
 }
 
-function copyAccountingCsv(period = "month") {
-  const headers = ["Numero", "Client", period === "year" ? "Annee" : "Mois", "Date de facturation", "Total signe", "Statut du paiement", "Statut"];
+function copyAccountingTable(period = "month") {
+  const headers = ["Numero", "Client", period === "year" ? "Annee" : "Mois", "Date de facturation", "Total signe", "Statut paiement", "Statut"];
   const rows = clientInvoiceRows(period);
 
-  const csv = [headers, ...rows]
-    .map(row => row.map(value => `"${String(value).replace(/"/g, '""')}"`).join(";"))
+  if (!rows.length) {
+    alert("Aucune facture a copier.");
+    return;
+  }
+
+  const html = `
+    <table border="1" cellpadding="6" cellspacing="0" style="border-collapse:collapse;font-family:Arial,sans-serif;font-size:13px">
+      <thead>
+        <tr style="background:#eef4e8">
+          ${headers.map(h => `<th style="text-align:left">${h}</th>`).join("")}
+        </tr>
+      </thead>
+      <tbody>
+        ${rows.map(row => `
+          <tr>
+            ${row.map(value => `<td>${String(value || "")}</td>`).join("")}
+          </tr>
+        `).join("")}
+      </tbody>
+    </table>
+  `;
+
+  const text = [headers, ...rows]
+    .map(row => row.join("\t"))
     .join("\n");
 
-  copyText(csv);
+  if (navigator.clipboard && window.ClipboardItem) {
+    navigator.clipboard.write([
+      new ClipboardItem({
+        "text/html": new Blob([html], { type: "text/html" }),
+        "text/plain": new Blob([text], { type: "text/plain" })
+      })
+    ]).then(() => {
+      alert("Tableau copie. Vous pouvez le coller dans Gmail.");
+    }).catch(() => {
+      copyText(text);
+      alert("Tableau copie en texte. Vous pouvez le coller dans Gmail.");
+    });
+  } else {
+    copyText(text);
+    alert("Tableau copie en texte. Vous pouvez le coller dans Gmail.");
+  }
 }
 function metric(label, value) {
   return `<div class="card card-pad metric"><span>${label}</span><strong>${value}</strong></div>`;
