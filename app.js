@@ -640,7 +640,7 @@ function renderMonthlyReport() {
     <div class="card card-pad" style="margin-top:16px">
       <div class="row space">
         <h3>Factures par client - mensuel</h3>
-        <button class="small secondary" onclick="copyAccountingCsv('month')">Copier CSV</button>
+        <button class="small secondary" onclick="copyAccountingTable('month')">Copier tableau</button>
       </div>
       ${accountingFilters("month")}
       ${clientInvoiceTable("month")}
