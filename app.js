@@ -1752,11 +1752,11 @@ function openOrderModal({ mail = null, order = null, docType = "devis" }) {
     document.querySelectorAll("[data-line-date]").forEach(inputEl => inputEl.addEventListener("input", e => items[Number(e.target.dataset.lineDate)].date = e.target.value));
     document.querySelectorAll("[data-line-end-date]").forEach(inputEl => inputEl.addEventListener("input", e => items[Number(e.target.dataset.lineEndDate)].endDate = e.target.value));
     document.querySelectorAll("[data-line-start]").forEach(inputEl => inputEl.addEventListener("input", e => items[Number(e.target.dataset.lineStart)].startTime = e.target.value));
-    document.querySelectorAll("[data-line-end]").forEach(inputEl => inputEl.addEventListener("input", e => items[Number(e.target.dataset.lineEnd)].endTime = e.target.value));
-    document.querySelectorAll("[data-line-remove]").forEach(btn => btn.addEventListener("click", () => { items.splice(Number(btn.dataset.lineRemove), 1); renderLines(); }));
-    document.querySelectorAll("[data-line-cancelled-qty]").forEach(inputEl => inputEl.addEventListener("input", e => items[Number(e.target.dataset.lineCancelledQty)].cancelledQty = Number(e.target.value || 0)));
-    document.querySelectorAll("[data-line-cancel-rate]").forEach(inputEl => inputEl.addEventListener("change", e => items[Number(e.target.dataset.lineCancelRate)].cancelRate = Number(e.target.value || 0)));
-    document.querySelectorAll("[data-line-cancel-reason]").forEach(inputEl => inputEl.addEventListener("input", e => items[Number(e.target.dataset.lineCancelReason)].cancelReason = e.target.value));
+   document.querySelectorAll("[data-line-end]").forEach(inputEl => inputEl.addEventListener("input", e => items[Number(e.target.dataset.lineEnd)].endTime = e.target.value));
+document.querySelectorAll("[data-line-cancelled-qty]").forEach(inputEl => inputEl.addEventListener("input", e => items[Number(e.target.dataset.lineCancelledQty)].cancelledQty = Number(e.target.value || 0)));
+document.querySelectorAll("[data-line-cancel-rate]").forEach(inputEl => inputEl.addEventListener("change", e => items[Number(e.target.dataset.lineCancelRate)].cancelRate = Number(e.target.value || 0)));
+document.querySelectorAll("[data-line-cancel-reason]").forEach(inputEl => inputEl.addEventListener("input", e => items[Number(e.target.dataset.lineCancelReason)].cancelReason = e.target.value));
+document.querySelectorAll("[data-line-remove]").forEach(btn => btn.addEventListener("click", () => { items.splice(Number(btn.dataset.lineRemove), 1); renderLines(); }));
   };
   renderLines();
   byId("insertNotesTemplateBtn").addEventListener("click", () => {
