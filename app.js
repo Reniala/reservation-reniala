@@ -908,15 +908,22 @@ function renderPipeline() {
   byId("newMailBtn").addEventListener("click", () => openMailModal());
 
   byId("syncMailsBtn").addEventListener("click", async () => {
-    try {
-      const result = await fetchJsonp(`${API_URL}?action=syncMails`);
-      alert(`${result.imported || 0} mail(s) importe(s).`);
-      await syncFromCloud();
-      render();
-    } catch (error) {
-      alert("Impossible de synchroniser les mails.");
+  try {
+    const result = await fetchJsonp(`${API_URL}?action=syncMails`);
+
+    if (!result.success) {
+      alert("Erreur synchronisation : " + (result.error || "Erreur inconnue"));
+      return;
     }
-  });
+
+    alert(`${result.imported || 0} mail(s) importe(s). Pieces jointes : ${result.attachments || 0}`);
+    await syncFromCloud();
+    render();
+  } catch (error) {
+    console.error(error);
+    alert("Impossible de synchroniser les mails : " + (error.message || error));
+  }
+});
 
   document.querySelectorAll("[data-mail-action]").forEach(btn =>
     btn.addEventListener("click", handleMailAction)
