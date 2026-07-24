@@ -186,8 +186,29 @@ function fmtMoney(value) { return `${Number(value || 0).toLocaleString("fr-FR")}
 function byId(id) { return document.getElementById(id); }
 function clientName(id) { return state.clients.find(c => c.id === id)?.name || "Client a completer"; }
 function product(id) { return state.products.find(p => p.id === id); }
-function orderTotal(order) { return order.items.reduce((sum, item) => sum + item.qty * item.price, 0); }
+
+function itemCancellationRate(item) {
+  return Number(item.cancelRate || 0);
+}
+
+function itemCancelledTotal(item) {
+  return Number(item.cancelledQty || 0) * Number(item.price || 0) * itemCancellationRate(item);
+}
+
+function itemActiveTotal(item) {
+  return Number(item.qty || 0) * Number(item.price || 0);
+}
+
+function itemBillableTotal(item) {
+  return itemActiveTotal(item) + itemCancelledTotal(item);
+}
+
+function orderTotal(order) {
+  return (order.items || []).reduce((sum, item) => sum + itemBillableTotal(item), 0);
+}
+
 function orderPaid(order) { return (order.payments || []).reduce((sum, payment) => sum + Number(payment.amount || 0), 0); }
+
 function cancellationRate(order) {
   const days = daysBetween(today(), order.serviceDate);
   if (order.status !== "Annulee") return 1;
@@ -195,9 +216,13 @@ function cancellationRate(order) {
   if (days >= 10) return 0.5;
   return 1;
 }
+
 function billableTotal(order) {
-  return order.status === "Annulee" ? Math.round(orderTotal(order) * cancellationRate(order)) : orderTotal(order);
+  return order.status === "Annulee"
+    ? Math.round(orderTotal(order) * cancellationRate(order))
+    : orderTotal(order);
 }
+
 function orderBalance(order) { return Math.max(billableTotal(order) - orderPaid(order), 0); }
 function orderCredit(order) { return Math.max(orderPaid(order) - billableTotal(order), 0); }
 function paymentStatus(order) {
@@ -1729,6 +1754,9 @@ function openOrderModal({ mail = null, order = null, docType = "devis" }) {
     document.querySelectorAll("[data-line-start]").forEach(inputEl => inputEl.addEventListener("input", e => items[Number(e.target.dataset.lineStart)].startTime = e.target.value));
     document.querySelectorAll("[data-line-end]").forEach(inputEl => inputEl.addEventListener("input", e => items[Number(e.target.dataset.lineEnd)].endTime = e.target.value));
     document.querySelectorAll("[data-line-remove]").forEach(btn => btn.addEventListener("click", () => { items.splice(Number(btn.dataset.lineRemove), 1); renderLines(); }));
+    document.querySelectorAll("[data-line-cancelled-qty]").forEach(inputEl => inputEl.addEventListener("input", e => items[Number(e.target.dataset.lineCancelledQty)].cancelledQty = Number(e.target.value || 0)));
+    document.querySelectorAll("[data-line-cancel-rate]").forEach(inputEl => inputEl.addEventListener("change", e => items[Number(e.target.dataset.lineCancelRate)].cancelRate = Number(e.target.value || 0)));
+    document.querySelectorAll("[data-line-cancel-reason]").forEach(inputEl => inputEl.addEventListener("input", e => items[Number(e.target.dataset.lineCancelReason)].cancelReason = e.target.value));
   };
   renderLines();
   byId("insertNotesTemplateBtn").addEventListener("click", () => {
@@ -1775,7 +1803,13 @@ function openOrderModal({ mail = null, order = null, docType = "devis" }) {
 
 function readOrderForm(base, items) {
   const data = Object.fromEntries(new FormData(byId("orderForm")));
-  return { ...base, ...data, items: structuredClone(items).filter(i => i.productId && i.qty > 0) };
+  return {
+    ...base,
+    ...data,
+    items: structuredClone(items).filter(i =>
+      i.productId && (Number(i.qty || 0) > 0 || Number(i.cancelledQty || 0) > 0)
+    )
+  };
 }
 
 function openPaymentModal(order) {
@@ -1823,22 +1857,34 @@ function paymentTable(order) {
 
 function lineItemHtml(item, index) {
   item.date = item.date || byId("orderForm")?.elements.serviceDate?.value || today();
-  item.endDate = item.endDate || item.date;
   item.startTime = item.startTime || "";
   item.endTime = item.endTime || "";
+  item.cancelledQty = item.cancelledQty || 0;
+  item.cancelRate = item.cancelRate || 0;
+  item.cancelReason = item.cancelReason || "";
 
   return `<div class="line-item">
     <div class="line-main">
       <label>Produit<select data-line-product="${index}">${state.products.map(p => `<option value="${p.id}" ${p.id === item.productId ? "selected" : ""}>${p.name}</option>`).join("")}</select></label>
-      <label>Qte<input type="number" min="0" data-line-qty="${index}" value="${item.qty}"></label>
+      <label>Qte maintenue<input type="number" min="0" data-line-qty="${index}" value="${item.qty}"></label>
       <label>Prix<input type="number" min="0" data-line-price="${index}" value="${item.price}"></label>
       <button type="button" class="danger small" data-line-remove="${index}">X</button>
     </div>
+
     <div class="line-times">
-      <label>Date debut<input type="date" data-line-date="${index}" value="${item.date}"></label>
-      <label>Date fin<input type="date" data-line-end-date="${index}" value="${item.endDate || item.date}"></label>
+      <label>Date prestation<input type="date" data-line-date="${index}" value="${item.date}"></label>
       <label>Heure debut<select data-line-start="${index}">${timeOptions(item.startTime)}</select></label>
       <label>Heure fin<select data-line-end="${index}">${timeOptions(item.endTime)}</select></label>
+    </div>
+
+    <div class="line-times">
+      <label>Qte annulee<input type="number" min="0" data-line-cancelled-qty="${index}" value="${item.cancelledQty}"></label>
+      <label>Frais annulation<select data-line-cancel-rate="${index}">
+        <option value="0" ${Number(item.cancelRate) === 0 ? "selected" : ""}>0 %</option>
+        <option value="0.5" ${Number(item.cancelRate) === 0.5 ? "selected" : ""}>50 %</option>
+        <option value="1" ${Number(item.cancelRate) === 1 ? "selected" : ""}>100 %</option>
+      </select></label>
+      <label>Justification<input data-line-cancel-reason="${index}" value="${item.cancelReason || ""}" placeholder="Ex: annulation partielle selon CGV"></label>
     </div>
   </div>`;
 }
@@ -1910,7 +1956,18 @@ const body = responseTemplate(type, visibleNumber, orderNumber)
 openMailClient(client.email, subject, body);
   });
 }
+function lineCancellationHtml(item) {
+  const cancelledQty = Number(item.cancelledQty || 0);
+  if (!cancelledQty) return "";
 
+  const rate = Math.round(itemCancellationRate(item) * 100);
+  const fees = itemCancelledTotal(item);
+
+  return `<br><small>
+    Annulation partielle : ${cancelledQty} x ${fmtMoney(item.price)} - frais ${rate}% = ${fmtMoney(fees)}
+    ${item.cancelReason ? `<br>${item.cancelReason}` : ""}
+  </small>`;
+}
 function documentHtml(order, type) {
   const client = state.clients.find(c => c.id === order.clientId) || {};
   const visibleNumber = documentNumber(order, type);
@@ -1956,7 +2013,12 @@ function documentHtml(order, type) {
       <div><h3>Date de prestation</h3>${order.serviceDate}</div>
       <div><h3>Option de paiement</h3>${order.paymentTerms || "Immediat"}</div>
     </div>
-    ${table(["Description","Quantite","Prix unitaire","Total"], order.items.map(i => [`${product(i.productId)?.name || "Produit"}${lineScheduleHtml(i)}`, i.qty, fmtMoney(i.price), fmtMoney(i.qty * i.price)]))}
+    ${table(["Description","Quantite","Prix unitaire","Total"], order.items.map(i => [
+  `${product(i.productId)?.name || "Produit"}${lineScheduleHtml(i)}${lineCancellationHtml(i)}`,
+  i.qty,
+  fmtMoney(i.price),
+  fmtMoney(itemBillableTotal(i))
+]))}
     <div class="doc-payment-communication"><strong>Communication de paiement :</strong> <strong>${visibleNumber}</strong></div>
     ${order.status === "Annulee" ? `<p style="text-align:right"><strong>Montant initial:</strong> ${fmtMoney(orderTotal(order))}<br><strong>Taux applique:</strong> ${Math.round(cancellationRate(order) * 100)}%</p>` : ""}
     <div class="doc-lower-grid">
