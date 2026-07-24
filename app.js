@@ -1033,15 +1033,44 @@ function mailSenderCheck(mail) {
 
   return `<p><strong>Expediteur :</strong> ${sender} <span class="pill danger">Pas l'email du client</span><br><span class="muted">Email client attendu : ${clientEmail}</span></p>`;
 }
+function cleanEmailAddress(value) {
+  const match = String(value || "").match(/<([^>]+)>/);
+  return match ? match[1].trim() : String(value || "").trim();
+}
 
+function guessCompanyFromMail(mail) {
+  const body = String(mail.body || "");
+  const from = String(mail.from || "");
+
+  const reasonMatch = body.match(/Raison sociale\s*:\s*([^\n\r]+)/i);
+  if (reasonMatch) return reasonMatch[1].trim();
+
+  const companyLines = body
+    .split(/\r?\n/)
+    .map(line => line.trim())
+    .filter(line =>
+      line.length >= 3 &&
+      line.length <= 80 &&
+      line === line.toUpperCase() &&
+      !line.includes("@") &&
+      !line.startsWith("[CID:")
+    );
+
+  if (companyLines.length) return companyLines[0];
+
+  const fromWithoutEmail = from.replace(/<[^>]+>/g, "").replace(/"/g, "").trim();
+  return fromWithoutEmail || "-";
+}
 function openMailDetailModal(mail) {
   const attachments = mailAttachments(mail);
 
   modal(`<h3>${mail.subject || "Mail recu"}</h3>
     <p class="muted">
-      De : ${mail.from || "-"}<br>
-      Recu le : ${mail.received || "-"}
-    </p>
+  De : ${mail.from || "-"}<br>
+  Email expediteur : ${mail.fromEmail || cleanEmailAddress(mail.from) || "-"}<br>
+  Entreprise probable : ${guessCompanyFromMail(mail)}
+  <br>Recu le : ${mail.received || "-"}
+</p>
     ${clientFromMailOrder(mail) ? `<p><strong>Client lie :</strong> ${clientFromMailOrder(mail)}</p>` : ""}
     ${mailSenderCheck(mail)}
 
