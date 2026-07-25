@@ -997,24 +997,20 @@ function handleMailAction(event) {
   if (action === "reply") return openReplyModal(mail);
 
   if (action === "delete") {
-  if (!confirm("Supprimer ce mail du pipeline ? Il ne reviendra plus apres synchronisation.")) return;
+    if (!confirm("Supprimer ce mail du pipeline ?")) return;
 
-  state.deletedMailIds = state.deletedMailIds || [];
-  if (action === "delete") {
-  if (!confirm("Supprimer ce mail du pipeline ?")) return;
+    state.mails = state.mails.filter(m => m.id !== mail.id);
 
-  state.mails = state.mails.filter(m => m.id !== mail.id);
+    state.deletedMailIds = state.deletedMailIds || [];
+    if (!state.deletedMailIds.includes(mail.id)) {
+      state.deletedMailIds.push(mail.id);
+    }
 
-  state.deletedMailIds = state.deletedMailIds || [];
-  if (!state.deletedMailIds.includes(mail.id)) {
-    state.deletedMailIds.push(mail.id);
+    saveState();
+    render();
+    return;
   }
-
-  saveState();
-  render();
-  return;
 }
-
 function mailAttachments(mail) {
   if (Array.isArray(mail.attachments)) return mail.attachments;
   if (Array.isArray(mail.piecesJointes)) return mail.piecesJointes;
