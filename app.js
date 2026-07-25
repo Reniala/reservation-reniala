@@ -172,7 +172,8 @@ function fetchJsonp(url) {
     };
 
     script.onerror = () => {
-      reject(new Error("Erreur de chargement Apps Script"));
+      const calledUrl = script.src;
+      reject(new Error("Erreur de chargement Apps Script. URL appelee : " + calledUrl));
       script.remove();
       delete window[callbackName];
     };
