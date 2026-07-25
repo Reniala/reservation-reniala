@@ -917,9 +917,9 @@ function renderPipeline() {
       return;
     }
 
-    alert(`${result.imported || 0} mail(s) importe(s). Pieces jointes : ${result.attachments || 0}`);
     await syncFromCloud();
     render();
+    alert(`${result.imported || 0} mail(s) importe(s). Pieces jointes : ${result.attachments || 0}`);
   } catch (error) {
     console.error(error);
     alert("Impossible de synchroniser les mails : " + (error.message || error));
