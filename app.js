@@ -955,32 +955,6 @@ function renderPipeline() {
       alert("Impossible de modifier le statut du mail : " + (error.message || error));
     }
   })
-  );
-    document.querySelectorAll("[data-mail-status]").forEach(select =>
-  select.addEventListener("change", async event => {
-    const mail = state.mails.find(m => m.id === event.target.dataset.mailStatus);
-    if (!mail) return;
-
-    const previousStatus = mail.status;
-    mail.status = event.target.value;
-    render();
-
-    try {
-      const result = await fetchJsonp(
-        `${API_URL}?action=updateMailStatus&id=${encodeURIComponent(mail.id)}&status=${encodeURIComponent(mail.status)}`
-      );
-
-      if (!result.success) {
-        mail.status = previousStatus;
-        render();
-        alert(result.error || "Impossible de modifier le statut du mail.");
-      }
-    } catch (error) {
-      mail.status = previousStatus;
-      render();
-      alert("Impossible de modifier le statut du mail : " + (error.message || error));
-    }
-  })
 );
 }
 
