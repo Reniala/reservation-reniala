@@ -912,17 +912,22 @@ function renderPipeline() {
   try {
     const result = await fetchJsonp(`${API_URL}?action=syncMails`);
 
+    await syncFromCloud();
+    render();
+
     if (!result.success) {
-      alert("Erreur synchronisation : " + (result.error || "Erreur inconnue"));
+      alert("Synchronisation partielle : " + (result.error || "erreur Apps Script"));
       return;
     }
 
-    await syncFromCloud();
-    render();
     alert(`${result.imported || 0} mail(s) importe(s). Pieces jointes : ${result.attachments || 0}`);
   } catch (error) {
     console.error(error);
-    alert("Impossible de synchroniser les mails : " + (error.message || error));
+
+    await syncFromCloud();
+    render();
+
+    alert("La synchronisation a peut-etre fonctionne partiellement. Les donnees ont ete rechargees.");
   }
 });
 
