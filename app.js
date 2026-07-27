@@ -999,7 +999,10 @@ function handleMailAction(event) {
     if (!confirm("Supprimer uniquement ce mail du pipeline ?")) return;
 
     const previousMails = [...state.mails];
-    state.mails = state.mails.filter(m => m.id !== mail.id);
+    const mailIndex = state.mails.findIndex(m => m.id === mail.id);
+if (mailIndex !== -1) {
+  state.mails.splice(mailIndex, 1);
+}
     render();
 
     fetchJsonp(`${API_URL}?action=updateMailStatus&id=${encodeURIComponent(mail.id)}&status=supprime`)
