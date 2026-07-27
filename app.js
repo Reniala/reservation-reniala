@@ -986,7 +986,6 @@ function mailCard(mail) {
     </div>
   </article>`;
 }
-
 function handleMailAction(event) {
   const mail = state.mails.find(m => m.id === event.currentTarget.dataset.id);
   const action = event.currentTarget.dataset.mailAction;
@@ -997,17 +996,26 @@ function handleMailAction(event) {
   if (action === "reply") return openReplyModal(mail);
 
   if (action === "delete") {
-    if (!confirm("Supprimer ce mail du pipeline ?")) return;
+    if (!confirm("Supprimer uniquement ce mail du pipeline ?")) return;
 
+    const previousMails = [...state.mails];
     state.mails = state.mails.filter(m => m.id !== mail.id);
-
-    state.deletedMailIds = state.deletedMailIds || [];
-    if (!state.deletedMailIds.includes(mail.id)) {
-      state.deletedMailIds.push(mail.id);
-    }
-
-    saveState();
     render();
+
+    fetchJsonp(`${API_URL}?action=updateMailStatus&id=${encodeURIComponent(mail.id)}&status=supprime`)
+      .then(result => {
+        if (!result.success) {
+          state.mails = previousMails;
+          render();
+          alert(result.error || "Impossible de supprimer ce mail.");
+        }
+      })
+      .catch(error => {
+        state.mails = previousMails;
+        render();
+        alert("Impossible de supprimer ce mail : " + (error.message || error));
+      });
+
     return;
   }
 }
