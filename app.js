@@ -1923,9 +1923,9 @@ function paymentTable(order) {
   if (!payments.length) return empty("Aucun paiement enregistre.");
   return table(["Date","Type","Mode","Reference","Montant"], payments.map(p => [p.date, p.type, p.method, p.reference || "-", fmtMoney(p.amount)]));
 }
-
 function lineItemHtml(item, index) {
   item.date = item.date || byId("orderForm")?.elements.serviceDate?.value || today();
+  item.endDate = item.endDate || item.date;
   item.startTime = item.startTime || "";
   item.endTime = item.endTime || "";
   item.cancelledQty = item.cancelledQty || 0;
@@ -1941,7 +1941,8 @@ function lineItemHtml(item, index) {
     </div>
 
     <div class="line-times">
-      <label>Date prestation<input type="date" data-line-date="${index}" value="${item.date}"></label>
+      <label>Date debut prestation<input type="date" data-line-date="${index}" value="${item.date}"></label>
+      <label>Date fin prestation<input type="date" data-line-end-date="${index}" value="${item.endDate}"></label>
       <label>Heure debut<select data-line-start="${index}">${timeOptions(item.startTime)}</select></label>
       <label>Heure fin<select data-line-end="${index}">${timeOptions(item.endTime)}</select></label>
     </div>
