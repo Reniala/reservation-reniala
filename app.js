@@ -1989,6 +1989,9 @@ byId("openMailBtn").addEventListener("click", () =>
 }
 
 function openDocumentModal(order, type = "devis", closable = true) {
+  ensureDocumentNumber(order, type);
+  saveState();
+
   const doc = documentHtml(order, type);
   const client = state.clients.find(c => c.id === order.clientId) || {};
   const visibleNumber = documentNumber(order, type);
@@ -2334,6 +2337,28 @@ function updateVisitState(id, visitState) {
 function statusPill(status) {
   const cls = /payee|regle|retour|arrives|Reservee/i.test(status) ? "ok" : /attente|payer|non|acompte|avoir/i.test(status) ? "warn" : /Annulee/i.test(status) ? "danger" : "";
   return `<span class="pill ${cls}">${status}</span>`;
+}
+
+function ensureDocumentNumber(order, type) {
+  const year = (order.orderDate || today()).slice(0, 4);
+  const raw = String(order.number || "").match(/(\d+)$/)?.[1] || "1";
+  const sequence = raw.padStart(5, "0");
+
+  if (type === "proforma" && !order.proformaNumber) {
+    order.proformaNumber = `PRO/${year}/${sequence}`;
+  }
+
+  if (type === "facture" && !order.invoiceNumber) {
+    order.invoiceNumber = `INV/${year}/${sequence}`;
+  }
+
+  if (type === "annulation" && !order.cancelInvoiceNumber) {
+    order.cancelInvoiceNumber = `INV/${year}/${sequence}-ANN`;
+  }
+
+  if (type === "avoir" && !order.creditNoteNumber) {
+    order.creditNoteNumber = `AV/${year}/${sequence}`;
+  }
 }
 function documentNumber(order, type) {
   const year = (order.orderDate || today()).slice(0, 4);
