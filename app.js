@@ -1746,7 +1746,7 @@ function nextOrderNumber() {
   const year = new Date().getFullYear();
   const prefix = `CMD-${year}-`;
 
-  const max = state.orders.reduce((highest, order) => {
+  const max = (state.orders || []).reduce((highest, order) => {
     const number = String(order.number || "");
     if (!number.startsWith(prefix)) return highest;
 
