@@ -1856,7 +1856,20 @@ document.querySelectorAll("[data-line-remove]").forEach(btn => btn.addEventListe
 });
   renderLines();
 });
-  byId("previewDocBtn").addEventListener("click", () => openDocumentModal(readOrderForm(o, items), docType, false));
+  byId("previewDocBtn").addEventListener("click", () => {
+  const saved = readOrderForm(o, items);
+  syncBilling(saved);
+
+  const existing = state.orders.find(existing => existing.id === saved.id);
+  if (existing) {
+    Object.assign(existing, saved);
+  } else {
+    state.orders.push(saved);
+  }
+
+  saveState();
+  openDocumentModal(saved, docType, false);
+});
   byId("orderForm").addEventListener("submit", e => {
     e.preventDefault();
     const saved = readOrderForm(o, items);
