@@ -126,18 +126,66 @@ async function syncFromCloud() {
 
     if (data?.state) {
       const currentUser = state.user;
-      state = {
-        ...structuredClone(seed),
-        ...data.state,
-        user: currentUser
-      };
+      const localState = structuredClone(state);
+      const remoteState = data.state;
+
+      state = mergeCloudState(localState, remoteState);
+      state.user = currentUser;
+
       localStorage.setItem("renialaAppState", JSON.stringify(state));
     } else if (state.user?.role === "Administrateur principal") {
       await saveRemoteState();
-}
+    }
   } catch (error) {
     console.warn("Synchronisation Google Sheet impossible", error);
   }
+}
+
+function mergeCloudState(localState, remoteState) {
+  const merged = {
+    ...structuredClone(seed),
+    ...remoteState
+  };
+
+  merged.clients = mergeById(remoteState.clients || [], localState.clients || []);
+  merged.products = mergeById(remoteState.products || [], localState.products || []);
+  merged.orders = mergeById(remoteState.orders || [], localState.orders || []);
+  merged.mails = mergeById(remoteState.mails || [], localState.mails || []);
+
+  merged.settings = {
+    ...(remoteState.settings || {}),
+    ...(localState.settings || {})
+  };
+
+  return merged;
+}
+
+function mergeById(remoteItems = [], localItems = []) {
+  const map = new Map();
+
+  remoteItems.forEach(item => {
+    if (item?.id) map.set(item.id, item);
+  });
+
+  localItems.forEach(item => {
+    if (!item?.id) return;
+
+    const existing = map.get(item.id);
+
+    if (!existing) {
+      map.set(item.id, item);
+      return;
+    }
+
+    const existingUpdated = String(existing.updatedAt || existing.dateModification || "");
+    const localUpdated = String(item.updatedAt || item.dateModification || "");
+
+    if (localUpdated && (!existingUpdated || localUpdated >= existingUpdated)) {
+      map.set(item.id, item);
+    }
+  });
+
+  return [...map.values()];
 }
 
 async function saveRemoteState() {
@@ -1886,12 +1934,15 @@ document.querySelectorAll("[data-line-remove]").forEach(btn => btn.addEventListe
 function readOrderForm(base, items) {
   const data = Object.fromEntries(new FormData(byId("orderForm")));
   return {
-    ...base,
-    ...data,
-    items: structuredClone(items).filter(i =>
-      i.productId && (Number(i.qty || 0) > 0 || Number(i.cancelledQty || 0) > 0)
-    )
-  };
+  ...base,
+  ...data,
+  id: base.id || uid(),
+  number: base.number || nextOrderNumber(),
+  updatedAt: new Date().toISOString(),
+  items: structuredClone(items).filter(i =>
+    i.productId && (Number(i.qty || 0) > 0 || Number(i.cancelledQty || 0) > 0)
+  )
+};
 }
 
 function openPaymentModal(order) {
