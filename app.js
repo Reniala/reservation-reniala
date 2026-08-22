@@ -192,6 +192,28 @@ async function saveRemoteState() {
   if (!API_URL || API_URL.includes("COLLE_ICI")) return;
 
   try {
+    let stateToSave = publicState();
+
+    try {
+      const remoteData = await fetchJsonp(API_URL);
+
+      if (remoteData?.state) {
+        stateToSave = mergeCloudState(stateToSave, remoteData.state);
+        stateToSave.user = null;
+      }
+    } catch (syncError) {
+      console.warn("Impossible de verifier Google Sheet avant sauvegarde", syncError);
+    }
+
+    const localOrderCount = (state.orders || []).length;
+    const saveOrderCount = (stateToSave.orders || []).length;
+
+    if (saveOrderCount < localOrderCount) {
+      console.warn("Sauvegarde bloquee: elle supprimerait des commandes.");
+      alert("Sauvegarde bloquee : le site a detecte un risque de perte de commandes. Recharge la page puis recommence.");
+      return;
+    }
+
     await fetch(API_URL, {
       method: "POST",
       mode: "no-cors",
@@ -200,14 +222,13 @@ async function saveRemoteState() {
       },
       body: JSON.stringify({
         action: "saveState",
-        state: publicState()
+        state: stateToSave
       })
     });
   } catch (error) {
     console.warn("Sauvegarde Google Sheet impossible", error);
   }
 }
-
 function fetchJsonp(url) {
   return new Promise((resolve, reject) => {
     const callbackName = "renialaCallback_" + Date.now();
