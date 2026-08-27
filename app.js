@@ -80,7 +80,8 @@ const seed = {
     { id: uid(), from: "booking@tropictours.mg", subject: "Demande reservation groupe premier circuit", received: today(-1), status: "en attente", body: "Bonjour, nous souhaitons reserver pour 12 visiteurs le groupe premier circuit le mois prochain. Merci de nous envoyer un devis.", clientId: null },
     { id: uid(), from: "martin@example.com", subject: "Reservation bungalow et visite nocturne", received: today(-3), status: "traite", body: "Bonjour, deux adultes souhaitent une nuit en bungalow et une visite nocturne.", clientId: null }
   ],
-  orders: []
+  orders: [],
+  deletedOrderIds: []
 };
 
 let state = loadState();
@@ -129,7 +130,10 @@ async function syncFromCloud() {
       const localState = structuredClone(state);
       const remoteState = data.state;
 
-      state = mergeCloudState(localState, remoteState);
+      // The cloud is the canonical snapshot when a workstation starts. Keeping
+      // local-only records here made stale reservations reappear from one
+      // computer and get uploaded again.
+      state = mergeCloudState(localState, remoteState, { preserveLocalOnly: false });
       state.user = currentUser;
 
       localStorage.setItem("renialaAppState", JSON.stringify(state));
@@ -141,26 +145,36 @@ async function syncFromCloud() {
   }
 }
 
-function mergeCloudState(localState, remoteState) {
+function mergeCloudState(localState, remoteState, { preserveLocalOnly = true } = {}) {
   const merged = {
     ...structuredClone(seed),
     ...remoteState
   };
 
-  merged.clients = mergeById(remoteState.clients || [], localState.clients || []);
-  merged.products = mergeById(remoteState.products || [], localState.products || []);
-  merged.orders = mergeById(remoteState.orders || [], localState.orders || []);
-  merged.mails = mergeById(remoteState.mails || [], localState.mails || []);
+  merged.clients = mergeById(remoteState.clients || [], localState.clients || [], preserveLocalOnly);
+  merged.products = mergeById(remoteState.products || [], localState.products || [], preserveLocalOnly);
+  merged.mails = mergeById(remoteState.mails || [], localState.mails || [], preserveLocalOnly);
+
+  merged.deletedOrderIds = [...new Set([
+    ...(remoteState.deletedOrderIds || []),
+    ...(preserveLocalOnly ? (localState.deletedOrderIds || []) : [])
+  ])];
+  const deletedOrderIds = new Set(merged.deletedOrderIds);
+  merged.orders = mergeById(
+    remoteState.orders || [],
+    localState.orders || [],
+    preserveLocalOnly
+  ).filter(order => !deletedOrderIds.has(order.id));
 
   merged.settings = {
     ...(remoteState.settings || {}),
-    ...(localState.settings || {})
+    ...(preserveLocalOnly ? (localState.settings || {}) : {})
   };
 
   return merged;
 }
 
-function mergeById(remoteItems = [], localItems = []) {
+function mergeById(remoteItems = [], localItems = [], preserveLocalOnly = true) {
   const map = new Map();
 
   remoteItems.forEach(item => {
@@ -172,10 +186,12 @@ function mergeById(remoteItems = [], localItems = []) {
 
     const existing = map.get(item.id);
 
-    if (!existing) {
+    if (!existing && preserveLocalOnly) {
       map.set(item.id, item);
       return;
     }
+
+    if (!existing) return;
 
     const existingUpdated = String(existing.updatedAt || existing.dateModification || "");
     const localUpdated = String(item.updatedAt || item.dateModification || "");
@@ -1283,6 +1299,7 @@ function renderOrders() {
     if (!confirm(`Supprimer la commande ${order.number} ? Cette action est definitive.`)) return;
 
     state.orders = state.orders.filter(o => o.id !== order.id);
+    state.deletedOrderIds = [...new Set([...(state.deletedOrderIds || []), order.id])];
     saveState();
     render();
   })
@@ -1347,10 +1364,7 @@ function renderCalendar() {
 
   const orders = state.orders
     .filter(o => o.status === "Reservee")
-    .filter(o => {
-      const d = new Date((o.serviceDate || "") + "T00:00:00");
-      return d.getFullYear() === calendarYear && d.getMonth() === calendarMonth;
-    });
+    .filter(o => days.some(day => orderOccursOnDay(o, day)));
 
   const clientIds = [...new Set(orders.map(o => o.clientId))];
 
@@ -1363,7 +1377,7 @@ function renderCalendar() {
       <input id="monthPicker" type="month" value="${calendarYear}-${String(calendarMonth + 1).padStart(2, "0")}">
     </div>
 
-    <div class="planning-table">
+    <div class="planning-table" style="--calendar-days:${days.length}">
       <div class="planning-head planning-client">Client / Agence</div>
       ${days.map(day => `
         <div class="planning-head ${day === today() ? "today-col" : ""}">
@@ -1506,6 +1520,7 @@ function openReservationDetailModal(order) {
   byId("markReturnBtn").addEventListener("click", () => {
     order.visitState = "retour";
     order.status = "Retournee";
+    order.updatedAt = new Date().toISOString();
     saveState();
     render();
     openReservationDetailModal(order);
@@ -1528,7 +1543,11 @@ function readonlyServiceHtml(item) {
 }
 
 function orderOccursOnDay(order, day) {
-  return order.serviceDate === day || (order.items || []).some(item => {
+  const scheduledItems = (order.items || []).filter(item => item.date || item.endDate);
+
+  if (!scheduledItems.length) return order.serviceDate === day;
+
+  return scheduledItems.some(item => {
     const start = item.date || order.serviceDate;
     const end = item.endDate || start;
     return day >= start && day <= end;
@@ -1536,7 +1555,11 @@ function orderOccursOnDay(order, day) {
 }
 
 function firstScheduleForDay(order, day) {
-  const item = (order.items || []).find(line => line.date === day) || (order.items || [])[0];
+  const item = (order.items || []).find(line => {
+    const start = line.date || order.serviceDate;
+    const end = line.endDate || start;
+    return day >= start && day <= end;
+  });
   return item ? `${formatTimeSeconds(item.startTime) || "heure ?"} - ${formatTimeSeconds(item.endTime) || "heure ?"}` : "horaire a confirmer";
 }
 
@@ -2407,6 +2430,7 @@ function daysBetween(a, b) {
 function updateOrderStatus(id, status) {
   const order = state.orders.find(o => o.id === id);
   order.status = status;
+  order.updatedAt = new Date().toISOString();
   syncBilling(order);
   saveState();
   render();
@@ -2415,6 +2439,7 @@ function updateVisitState(id, visitState) {
   const order = state.orders.find(o => o.id === id);
   order.visitState = visitState;
   if (visitState === "retour") order.status = "Retournee";
+  order.updatedAt = new Date().toISOString();
   saveState();
   render();
 }
