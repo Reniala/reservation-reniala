@@ -968,7 +968,7 @@ th { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spa
 .planning-table {
   width: max-content;
   min-width: max-content;
-  grid-template-columns: 300px repeat(31, 120px);
+  grid-template-columns: 300px repeat(var(--calendar-days, 31), 120px);
 }
 
 .planning-head,
