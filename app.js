@@ -130,10 +130,9 @@ async function syncFromCloud() {
       const localState = structuredClone(state);
       const remoteState = data.state;
 
-      // The cloud is the canonical snapshot when a workstation starts. Keeping
-      // local-only records here made stale reservations reappear from one
-      // computer and get uploaded again.
-      state = mergeCloudState(localState, remoteState, { preserveLocalOnly: false });
+      // Preserve records created on this workstation even if the cloud has not
+      // received them yet. Dropping local-only records here can lose orders.
+      state = mergeCloudState(localState, remoteState);
       state.user = currentUser;
 
       localStorage.setItem("renialaAppState", JSON.stringify(state));
