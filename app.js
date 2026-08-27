@@ -85,6 +85,7 @@ const seed = {
 };
 
 let state = loadState();
+let remoteSaveQueue = Promise.resolve();
 let currentView = "dashboard";
 let calendarYear = new Date().getFullYear();
 let calendarMonth = new Date().getMonth();
@@ -108,8 +109,27 @@ function loadState() {
 }
 
 function saveState() {
+  const revision = `${new Date().toISOString()}-${uid()}`;
+  state.syncRevision = revision;
   localStorage.setItem("renialaAppState", JSON.stringify(state));
-  saveRemoteState();
+  const snapshot = structuredClone(publicState());
+  showCloudSaveStatus("Sauvegarde Google Sheets en cours...", "pending");
+  remoteSaveQueue = remoteSaveQueue
+    .catch(() => {})
+    .then(() => saveRemoteState(snapshot, revision));
+  return remoteSaveQueue;
+}
+
+function showCloudSaveStatus(message, status) {
+  let indicator = document.getElementById("cloudSaveStatus");
+  if (!indicator) {
+    indicator = document.createElement("div");
+    indicator.id = "cloudSaveStatus";
+    indicator.setAttribute("role", "status");
+    document.body.appendChild(indicator);
+  }
+  indicator.className = `cloud-save-status ${status || ""}`;
+  indicator.textContent = message;
 }
 
 function publicState() {
@@ -203,11 +223,11 @@ function mergeById(remoteItems = [], localItems = [], preserveLocalOnly = true) 
   return [...map.values()];
 }
 
-async function saveRemoteState() {
+async function saveRemoteState(snapshot = publicState(), revision = snapshot.syncRevision) {
   if (!API_URL || API_URL.includes("COLLE_ICI")) return;
 
   try {
-    let stateToSave = publicState();
+    let stateToSave = structuredClone(snapshot);
 
     try {
       const remoteData = await fetchJsonp(API_URL);
@@ -215,6 +235,7 @@ async function saveRemoteState() {
       if (remoteData?.state) {
         stateToSave = mergeCloudState(stateToSave, remoteData.state);
         stateToSave.user = null;
+        stateToSave.syncRevision = revision;
       }
     } catch (syncError) {
       console.warn("Impossible de verifier Google Sheet avant sauvegarde", syncError);
@@ -240,8 +261,31 @@ async function saveRemoteState() {
         state: stateToSave
       })
     });
+
+    for (let attempt = 0; attempt < 6; attempt += 1) {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      const confirmation = await fetchJsonp(API_URL);
+      if (confirmation?.state?.syncRevision === revision) {
+        if (state.syncRevision === revision) {
+          showCloudSaveStatus(
+            `Sauvegarde confirmee dans Google Sheets (${stateToSave.orders.length} commandes).`,
+            "success"
+          );
+        }
+        return true;
+      }
+    }
+
+    throw new Error("La confirmation Google Sheets n'a pas ete recue.");
   } catch (error) {
     console.warn("Sauvegarde Google Sheet impossible", error);
+    if (state.syncRevision === revision) {
+      showCloudSaveStatus(
+        "Echec de sauvegarde Google Sheets. Les donnees restent sur cet ordinateur.",
+        "error"
+      );
+    }
+    return false;
   }
 }
 function fetchJsonp(url) {
