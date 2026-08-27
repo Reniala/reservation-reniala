@@ -1067,6 +1067,25 @@ th { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spa
   margin-top: 1px !important;
 }
 
+.cloud-save-status {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 10000;
+  max-width: min(430px, calc(100vw - 36px));
+  padding: 11px 14px;
+  border: 1px solid #aeb9a8;
+  border-radius: 8px;
+  background: #f4f6f1;
+  color: #283126;
+  box-shadow: 0 4px 18px rgba(25, 35, 25, 0.18);
+  font-weight: 700;
+}
+
+.cloud-save-status.success { background: #e4f3dc; border-color: #719c5d; }
+.cloud-save-status.pending { background: #fff4d6; border-color: #d3aa46; }
+.cloud-save-status.error { background: #fde1df; border-color: #bd5b55; }
+
 .report-tabs {
   display: flex;
   gap: 8px;
