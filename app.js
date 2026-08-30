@@ -81,10 +81,12 @@ const seed = {
     { id: uid(), from: "martin@example.com", subject: "Reservation bungalow et visite nocturne", received: today(-3), status: "traite", body: "Bonjour, deux adultes souhaitent une nuit en bungalow et une visite nocturne.", clientId: null }
   ],
   orders: [],
-  deletedOrderIds: []
+  deletedOrderIds: [],
+  deletedOrdersRetentionDays: 30
 };
 
 let state = loadState();
+purgeExpiredDeletedOrders(state);
 let remoteSaveQueue = Promise.resolve();
 let currentView = "dashboard";
 let calendarYear = new Date().getFullYear();
@@ -109,8 +111,13 @@ function loadState() {
 }
 
 function saveState() {
+  purgeExpiredDeletedOrders(state);
   const revision = `${new Date().toISOString()}-${uid()}`;
   state.syncRevision = revision;
+  state.lastChange = {
+    at: new Date().toISOString(),
+    user: state.user?.email || state.user?.name || "utilisateur"
+  };
   localStorage.setItem("renialaAppState", JSON.stringify(state));
   const snapshot = structuredClone(publicState());
   showCloudSaveStatus("Sauvegarde Google Sheets en cours...", "pending");
@@ -130,6 +137,29 @@ function showCloudSaveStatus(message, status) {
   }
   indicator.className = `cloud-save-status ${status || ""}`;
   indicator.textContent = message;
+}
+
+function activeOrders() {
+  return (state.orders || []).filter(order => !order.deletedAt);
+}
+
+function deletedOrders() {
+  return (state.orders || []).filter(order => order.deletedAt);
+}
+
+function purgeExpiredDeletedOrders(targetState) {
+  const retentionDays = Number(targetState.deletedOrdersRetentionDays || 30);
+  const cutoff = Date.now() - retentionDays * 86400000;
+  const expiredIds = (targetState.orders || [])
+    .filter(order => order.deletedAt && new Date(order.deletedAt).getTime() <= cutoff)
+    .map(order => order.id);
+  if (!expiredIds.length) return;
+  const expired = new Set(expiredIds);
+  targetState.orders = (targetState.orders || []).filter(order => !expired.has(order.id));
+  targetState.deletedOrderIds = [...new Set([
+    ...(targetState.deletedOrderIds || []),
+    ...expiredIds
+  ])];
 }
 
 function publicState() {
@@ -431,8 +461,8 @@ function buildNav() {
 function countFor(id) {
   if (id === "pipeline") return state.mails.filter(m => m.status !== "regle").length;
   if (id === "clients") return state.clients.length;
-  if (id === "orders") return state.orders.length;
-  if (id === "billing") return state.orders.filter(o => paymentStatus(o) !== "payee").length;
+  if (id === "orders") return activeOrders().length;
+  if (id === "billing") return activeOrders().filter(o => paymentStatus(o) !== "payee").length;
   return "";
 }
 
@@ -531,7 +561,7 @@ function renderDashboardReport() {
 function renderMonthlyReport() {
   const map = {};
 
-  state.orders.forEach(o => {
+  activeOrders().forEach(o => {
     const key = (o.serviceDate || o.orderDate || today()).slice(0, 7);
     map[key] = map[key] || { orders: [], total: 0, paid: 0, balance: 0 };
     map[key].orders.push(o);
@@ -560,7 +590,7 @@ function renderMonthlyReport() {
     </div>
   `;
 }
-function accountingTotals(orders = state.orders) {
+function accountingTotals(orders = activeOrders()) {
   const validOrders = orders.filter(o => o.status !== "Annulee");
   const cancelledOrders = orders.filter(o => o.status === "Annulee");
 
@@ -616,14 +646,14 @@ function renderAccountingOverview() {
       ${kpiCard("Encaisse", fmtMoney(t.paid))}
       ${kpiCard("Reste a encaisser", fmtMoney(t.balance))}
       ${kpiCard("Avoirs / remboursements", fmtMoney(t.credit))}
-      ${kpiCard("Commandes", state.orders.length)}
+      ${kpiCard("Commandes", activeOrders().length)}
       ${kpiCard("Annulations", t.cancelledOrders.length)}
     </div>
   `;
 }
 
 function renderSalesReport() {
-  const rows = state.orders.map(o => [
+  const rows = activeOrders().map(o => [
     o.number || o.id,
     clientName(o.clientId),
     o.serviceDate || "-",
@@ -639,7 +669,7 @@ function renderSalesReport() {
 function renderClientsAccountingReport() {
   const map = {};
 
-  state.orders.forEach(o => {
+  activeOrders().forEach(o => {
     const name = clientName(o.clientId);
     map[name] = map[name] || { count: 0, total: 0, paid: 0, balance: 0 };
     map[name].count += 1;
@@ -658,7 +688,7 @@ function renderClientsAccountingReport() {
 function renderProductsAccountingReport() {
   const map = {};
 
-  state.orders.forEach(o => {
+  activeOrders().forEach(o => {
     (o.items || []).forEach(item => {
       const p = product(item.productId);
       const name = p?.name || "Produit";
@@ -676,7 +706,7 @@ function renderProductsAccountingReport() {
 }
 
 function renderPaymentsReport() {
-  const rows = state.orders.map(o => [
+  const rows = activeOrders().map(o => [
     o.number || o.id,
     clientName(o.clientId),
     o.paymentTerms || "-",
@@ -689,7 +719,7 @@ function renderPaymentsReport() {
 }
 
 function renderRefundsReport() {
-  const rows = state.orders
+  const rows = activeOrders()
     .filter(o => o.status === "Annulee" || orderCredit(o) > 0)
     .map(o => [
       o.number || o.id,
@@ -732,7 +762,7 @@ function renderPaymentGroupReport(group) {
   const rows = [];
   let total = 0;
 
-  state.orders.forEach(order => {
+  activeOrders().forEach(order => {
     (order.payments || []).forEach(payment => {
       if (paymentGroup(payment.method) !== group) return;
 
@@ -772,7 +802,7 @@ function renderPaymentGroupReport(group) {
 function renderMonthlyReport() {
   const map = {};
 
-  state.orders.forEach(o => {
+  activeOrders().forEach(o => {
     const key = (o.serviceDate || o.orderDate || today()).slice(0, 7);
     map[key] = map[key] || { orders: [], total: 0, paid: 0, balance: 0 };
     map[key].orders.push(o);
@@ -805,7 +835,7 @@ function renderMonthlyReport() {
 function renderYearlyReport() {
   const map = {};
 
-  state.orders.forEach(o => {
+  activeOrders().forEach(o => {
     const key = (o.serviceDate || o.orderDate || today()).slice(0, 4);
     map[key] = map[key] || { orders: [], total: 0, paid: 0, balance: 0 };
     map[key].orders.push(o);
@@ -843,7 +873,7 @@ function accountingFilters(period = "month") {
     )
   ].join("");
 
-  const periods = [...new Set(state.orders.map(o => {
+  const periods = [...new Set(activeOrders().map(o => {
     const date = o.orderDate || o.serviceDate || today();
     return period === "year" ? date.slice(0, 4) : date.slice(0, 7);
   }))].sort();
@@ -899,7 +929,7 @@ function accountingFilters(period = "month") {
 }
 
 function clientInvoiceRows(period = "month") {
-  return state.orders
+  return activeOrders()
     .filter(o => accountingClientFilter === "all" || o.clientId === accountingClientFilter)
     .filter(o => o.status !== "Annulee")
     .slice()
@@ -1323,13 +1353,17 @@ function renderProducts() {
 
 function renderOrders() {
   byId("orders").innerHTML = `
-    <div class="toolbar"><button id="newOrderBtn">Nouvelle commande</button></div>
+    <div class="toolbar">
+      <button id="newOrderBtn">Nouvelle commande</button>
+      <button id="orderTrashBtn" class="secondary">Corbeille (${deletedOrders().length})</button>
+    </div>
     <div class="grid cols-3">
       ${orderColumn("Reservee")}
       ${orderColumn("Annulee")}
       ${orderColumn("Retournee")}
     </div>`;
   byId("newOrderBtn").addEventListener("click", () => openOrderModal({}));
+  byId("orderTrashBtn").addEventListener("click", openOrderTrashModal);
   document.querySelectorAll("[data-order-doc]").forEach(btn => btn.addEventListener("click", () => openDocumentModal(state.orders.find(o => o.id === btn.dataset.orderDoc), btn.dataset.type)));
   document.querySelectorAll("[data-order-edit]").forEach(btn => btn.addEventListener("click", () => openOrderModal({ order: state.orders.find(o => o.id === btn.dataset.orderEdit) })));
   document.querySelectorAll("[data-order-payment]").forEach(btn => btn.addEventListener("click", () => openPaymentModal(state.orders.find(o => o.id === btn.dataset.orderPayment))));
@@ -1339,10 +1373,11 @@ function renderOrders() {
     const order = state.orders.find(o => o.id === btn.dataset.orderDelete);
     if (!order) return;
 
-    if (!confirm(`Supprimer la commande ${order.number} ? Cette action est definitive.`)) return;
+    if (!confirm(`Placer la commande ${order.number} dans la corbeille pendant 30 jours ?`)) return;
 
-    state.orders = state.orders.filter(o => o.id !== order.id);
-    state.deletedOrderIds = [...new Set([...(state.deletedOrderIds || []), order.id])];
+    order.deletedAt = new Date().toISOString();
+    order.deletedBy = state.user?.email || state.user?.name || "utilisateur";
+    order.updatedAt = order.deletedAt;
     saveState();
     render();
   })
@@ -1350,8 +1385,43 @@ function renderOrders() {
 }
 
 function orderColumn(status) {
-  const orders = state.orders.filter(o => o.status === status);
+  const orders = activeOrders().filter(o => o.status === status);
   return `<div class="card card-pad"><h3>${status}</h3><div class="list">${orders.map(orderCard).join("") || empty("Aucune commande.")}</div></div>`;
+}
+
+function openOrderTrashModal() {
+  const retentionDays = Number(state.deletedOrdersRetentionDays || 30);
+  const orders = deletedOrders().sort((a, b) => String(b.deletedAt).localeCompare(String(a.deletedAt)));
+  modal(`<div class="row space">
+      <h3>Corbeille des commandes</h3>
+      <button type="button" class="secondary" data-close>Fermer</button>
+    </div>
+    <p class="muted">Les commandes sont supprimees definitivement apres ${retentionDays} jours.</p>
+    <div class="list">
+      ${orders.map(order => {
+        const ageDays = Math.floor((Date.now() - new Date(order.deletedAt).getTime()) / 86400000);
+        const remaining = Math.max(0, retentionDays - ageDays);
+        return `<article class="order-card card card-pad">
+          <strong>${order.number || order.id}</strong> - ${clientName(order.clientId)}<br>
+          <span class="muted">Supprimee par ${order.deletedBy || "-"} le ${formatFrenchDate(String(order.deletedAt).slice(0, 10))}. ${remaining} jour(s) avant purge.</span><br>
+          <button type="button" class="small" data-order-restore="${order.id}">Restaurer</button>
+        </article>`;
+      }).join("") || empty("La corbeille est vide.")}
+    </div>`);
+
+  document.querySelectorAll("[data-order-restore]").forEach(button => {
+    button.addEventListener("click", () => {
+      const order = state.orders.find(item => item.id === button.dataset.orderRestore);
+      if (!order) return;
+      delete order.deletedAt;
+      delete order.deletedBy;
+      order.updatedAt = new Date().toISOString();
+      state.deletedOrderIds = (state.deletedOrderIds || []).filter(id => id !== order.id);
+      saveState();
+      closeModal();
+      render();
+    });
+  });
 }
 
 function orderCard(order) {
@@ -1377,8 +1447,8 @@ function orderCard(order) {
 }
 
 function renderBilling() {
-  state.orders.forEach(syncBilling);
-  const rows = state.orders.map(o => [
+  activeOrders().forEach(syncBilling);
+  const rows = activeOrders().map(o => [
     o.number,
     clientName(o.clientId),
     fmtMoney(orderTotal(o)),
@@ -1405,7 +1475,7 @@ function renderCalendar() {
     return formatDateKey(new Date(calendarYear, calendarMonth, index + 1));
   });
 
-  const orders = state.orders
+  const orders = activeOrders()
     .filter(o => o.status === "Reservee")
     .filter(o => days.some(day => orderOccursOnDay(o, day)));
 
@@ -1474,7 +1544,7 @@ function planningRow(clientId, days) {
 }
 
 function planningCell(clientId, day) {
-  const events = state.orders.filter(o =>
+  const events = activeOrders().filter(o =>
     o.status === "Reservee" &&
     o.clientId === clientId &&
     orderOccursOnDay(o, day)
