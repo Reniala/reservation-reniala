@@ -2221,12 +2221,28 @@ function openDocumentModal(order, type = "devis", closable = true) {
   const oldTitle = document.title;
   const fileName = `${visibleNumber} - ${order.tourName || "Reservation"}`.replace(/[\/\\:*?"<>|]/g, "-");
 
+  const hiddenForPrint = [...document.body.querySelectorAll("*")].filter(element =>
+    /Sauvegarde Google Sheets|Google Sheets en cours|Sheets en cours/i.test(element.textContent || "")
+  );
+
+  hiddenForPrint.forEach(element => {
+    element.dataset.printDisplay = element.style.display || "";
+    element.style.display = "none";
+  });
+
   document.title = fileName;
-  window.print();
 
   setTimeout(() => {
-    document.title = oldTitle;
-  }, 1000);
+    window.print();
+
+    setTimeout(() => {
+      document.title = oldTitle;
+      hiddenForPrint.forEach(element => {
+        element.style.display = element.dataset.printDisplay || "";
+        delete element.dataset.printDisplay;
+      });
+    }, 1000);
+  }, 200);
 });
   byId("sendDocBtn").addEventListener("click", () => {
     if (!client.email) {
