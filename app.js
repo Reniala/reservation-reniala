@@ -177,14 +177,8 @@ async function syncFromCloud() {
 
     if (data?.state) {
       const currentUser = state.user;
-      const localState = structuredClone(state);
-      const remoteState = data.state;
-
-      // Preserve records created on this workstation even if the cloud has not
-      // received them yet. Dropping local-only records here can lose orders.
-      state = mergeCloudState(localState, remoteState);
+      state = mergeCloudState(state, data.state);
       state.user = currentUser;
-
       localStorage.setItem("renialaAppState", JSON.stringify(state));
     } else if (state.user?.role === "Administrateur principal") {
       await saveRemoteState();
@@ -2063,6 +2057,7 @@ document.querySelectorAll("[data-line-remove]").forEach(btn => btn.addEventListe
 });
   byId("previewDocBtn").addEventListener("click", () => {
   const saved = readOrderForm(o, items);
+  saved.updatedAt = new Date().toISOString();
   syncBilling(saved);
 
   const existing = state.orders.find(existing => existing.id === saved.id);
@@ -2132,6 +2127,8 @@ function openPaymentModal(order) {
       return;
     }
     order.payments.push(data);
+    order.updatedAt = new Date().toISOString();
+    state.syncRevision = new Date().toISOString();
     syncBilling(order);
     saveState();
     closeModal();
